@@ -17,6 +17,7 @@ open Ast
 
 %nonassoc NOELSE
 %nonassoc ELSE
+%nonassoc ELIF
 %right ASSIGN
 %left OR
 %left AND
