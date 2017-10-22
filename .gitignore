@@ -1,20 +1,37 @@
-*.annot
-*.cmo
-*.cma
-*.cmi
-*.a
+Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
 *.o
-*.cmx
-*.cmxs
-*.cmxa
+*.so
 
-# ocamlbuild working directory
-_build/
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
 
-# ocamlbuild targets
-*.byte
-*.native
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
 
-# oasis generated files
-setup.data
-setup.log
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
