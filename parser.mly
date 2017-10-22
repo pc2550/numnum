@@ -11,6 +11,7 @@ open Ast
 %token RBRACK LBRACK ELIF BREAK FLOAT STRING
 %token SHAPE DIMS FUNC
 %token <int> LITERAL
+%token <float> FLITERAL
 %token <string> ID
 %token EOF
 
@@ -69,6 +70,7 @@ typ:
     INT { Int }
   | BOOL { Bool }
   | VOID { Void }
+  | FLOAT { Float }
 
 vdecl_list:
     /* nothing */    { [] }
@@ -99,6 +101,7 @@ expr_opt:
 
 expr:
     LITERAL          { Literal($1) }
+  | FLITERAL         { FLiteral($1) }
   | TRUE             { BoolLit(true) }
   | FALSE            { BoolLit(false) }
   | ID               { Id($1) }
