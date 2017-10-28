@@ -94,26 +94,27 @@ let check (globals, functions) =
 
     (* Return the type of an expression or throw an exception *)
     let rec expr = function
-	     Literal _ -> Int
+	      Literal _ -> Int
       | FLiteral _ -> Float
       | BoolLit _ -> Bool
       | Id s -> type_of_identifier s
       | Binop(e1, op, e2) as e -> let t1 = expr e1 and t2 = expr e2 in
-	(match op with
-          Add | Sub | Mult | Div when t1 = Int && t2 = Int -> Int
-	| Equal | Neq when t1 = t2 -> Bool
-	| Less | Leq | Greater | Geq when t1 = Int && t2 = Int -> Bool
-	| And | Or when t1 = Bool && t2 = Bool -> Bool
-        | _ -> raise (Failure ("illegal binary operator " ^
-              string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
-              string_of_typ t2 ^ " in " ^ string_of_expr e))
+	         (match op with
+               Add | Sub | Mult | Div when t1 = Int && t2 = Int -> Int
+             | Add | Sub | Mult | Div when t1 = Float && t2 = Float -> Float
+	           | Equal | Neq when t1 = t2 -> Bool
+	           | Less | Leq | Greater|  Geq when t1 = Int && t2 = Int -> Bool
+	           | And | Or when t1 = Bool && t2 = Bool -> Bool
+              | _ -> raise (Failure ("illegal binary operator " ^
+                  string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
+                  string_of_typ t2 ^ " in " ^ string_of_expr e))
         )
       | Unop(op, e) as ex -> let t = expr e in
-	 (match op with
-	   Neg when t = Int -> Int
-	 | Not when t = Bool -> Bool
-         | _ -> raise (Failure ("illegal unary operator " ^ string_of_uop op ^
-	  		   string_of_typ t ^ " in " ^ string_of_expr ex)))
+      	 (match op with
+      	   Neg when t = Int -> Int
+      	 | Not when t = Bool -> Bool
+               | _ -> raise (Failure ("illegal unary operator " ^ string_of_uop op ^
+      	  		   string_of_typ t ^ " in " ^ string_of_expr ex)))
       | Noexpr -> Void
       | Assign(var, e) as ex -> let lt = type_of_identifier var
                                 and rt = expr e in

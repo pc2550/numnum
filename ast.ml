@@ -64,8 +64,9 @@ let rec string_of_expr = function
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s
-  | Binop(e1, o, e2) ->
-      string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
+  | Binop(e1, o, e2) -> 
+        let l = string_of_expr e1 and r = string_of_expr e2 in
+            (l ^ " " ^ string_of_op o ^ " " ^ r)
   | Unop(o, e) -> string_of_uop o ^ string_of_expr e
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
