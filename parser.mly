@@ -41,12 +41,12 @@ decls:
  | decls fdecl { fst $1, ($2 :: snd $1) }
 
 fdecl:
-   FUNC typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
-     { { typ = $2;
-	 fname = $3;
-	 formals = $5;
-	 locals = List.rev $8;
-	 body = List.rev $9 } }
+  typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
+     { { typ = $1;
+	 fname = $2;
+	 formals = $4;
+	 locals = List.rev $7;
+	 body = List.rev $8 } }
 
 
 matrix_size:
