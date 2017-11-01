@@ -12,7 +12,7 @@ open Ast
 %token SHAPE DIMS FUNC
 %token <int> LITERAL
 %token <float> FLITERAL
-%token <string> ID
+%token <string> ID SLITERAL
 %token EOF
 
 %nonassoc NOELSE
@@ -72,6 +72,7 @@ typ:
   | BOOL { Bool }
   | VOID { Void }
   | FLOAT { Float }
+  | STRING { String}
 
 vdecl_list:
     /* nothing */    { [] }
@@ -103,6 +104,7 @@ expr_opt:
 expr:
     LITERAL          { Literal($1) }
   | FLITERAL         { FLiteral($1) }
+  | SLITERAL		 { SLiteral($1) }
   | TRUE             { BoolLit(true) }
   | FALSE            { BoolLit(false) }
   | ID               { Id($1) }

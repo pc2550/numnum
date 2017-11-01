@@ -24,12 +24,14 @@ let translate (globals, functions) =
   and i8_t   = L.i8_type   context
   and i1_t   = L.i1_type   context
   and void_t = L.void_type context
-  and float_t = L.double_type context  in
+  and float_t = L.double_type context
+  and string_t  = L.pointer_type (L.i8_type context) in
 
   let ltype_of_typ = function
       A.Int -> i32_t
     | A.Bool -> i1_t
-    | A.Void -> void_t 
+    | A.Void -> void_t
+    | A.String  -> string_t
     | A.Float -> float_t in
 
   (* Declare each global variable; remember its value in a map *)
@@ -52,7 +54,7 @@ let translate (globals, functions) =
       in let ftype = L.function_type (ltype_of_typ fdecl.A.typ) formal_types in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m in
     List.fold_left function_decl StringMap.empty functions in
-  
+
   (* Fill in the body of the given function *)
   let build_function_body fdecl =
     let (the_function, _) = StringMap.find fdecl.A.fname function_decls in
@@ -60,6 +62,7 @@ let translate (globals, functions) =
 
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
     let float_format_str = L.build_global_stringptr "%f\n" "fmt" builder in
+    let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
     (* Construct the function's "locals": formal arguments and locally
        declared variables.  Allocate each on the stack, initialize their
        value, if appropriate, and remember their values in the "locals" map *)
@@ -85,6 +88,7 @@ let translate (globals, functions) =
     let rec expr builder = function
 	      A.Literal i -> L.const_int i32_t i
       | A.FLiteral i -> L.const_float  float_t i
+      | A.SLiteral l -> L.build_global_stringptr l "tmp" builder
       | A.BoolLit b -> L.const_int i1_t (if b then 1 else 0)
       | A.Noexpr -> L.const_int i32_t 0
       | A.Id s -> L.build_load (lookup s) s builder
@@ -93,7 +97,7 @@ let translate (globals, functions) =
 	       and e2' = expr builder e2
          and etype = L.classify_type(L.type_of (expr builder e1)) in
          (match (etype) with
-            L.TypeKind.Double  -> 
+            L.TypeKind.Double  ->
               (match op with
                 A.Add     -> L.build_fadd
               | A.Sub     -> L.build_fsub
@@ -123,7 +127,7 @@ let translate (globals, functions) =
           	  | A.Greater -> L.build_icmp L.Icmp.Sgt
           	  | A.Geq     -> L.build_icmp L.Icmp.Sge
           	  ) e1' e2' "tmp" builder )
-         
+
 
       | A.Unop(op, e) ->
 	  let e' = expr builder e in
@@ -136,6 +140,8 @@ let translate (globals, functions) =
 	  L.build_call printf_func [| int_format_str ; (expr builder e) |] "printf" builder
       | A.Call ("printfl",[e]) ->
       L.build_call printf_func [| float_format_str ; (expr builder e) |] "printf" builder
+      | A.Call ("printstr",[e]) ->
+      L.build_call printf_func [| string_format_str ; (expr builder e) |] "printf" builder
       | A.Call (f, act) ->
          let (fdef, fdecl) = StringMap.find f function_decls in
 	 let actuals = List.rev (List.map (expr builder) (List.rev act)) in
@@ -150,7 +156,7 @@ let translate (globals, functions) =
       match L.block_terminator (L.insertion_block builder) with
 	Some _ -> ()
       | None -> ignore (f builder) in
-	
+
     (* Build the code for the given statement; return the builder for
        the statement's successor *)
     let rec stmt builder = function
