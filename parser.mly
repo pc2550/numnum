@@ -13,6 +13,7 @@ open Ast
 %token <int> LITERAL
 %token <float> FLITERAL
 %token <string> ID SLITERAL
+%token MATRIX
 %token EOF
 
 %nonassoc NOELSE
@@ -49,16 +50,6 @@ fdecl:
 	 body = List.rev $8 } }
 
 
-matrix_size:
-  INT {Int}
-
-matrix_plist:
-  matrix_params { [$1] }
-  | matrix_plist matrix_params {$2 :: $1}
-
-matrix_params:
-  LBRACK matrix_size RBRACK {$2}
-
 formals_opt:
     /* nothing */ { [] }
   | formal_list   { List.rev $1 }
@@ -72,15 +63,22 @@ typ:
   | BOOL { Bool }
   | VOID { Void }
   | FLOAT { Float }
-  | STRING { String}
+  | STRING { String }
+  | typ matrix_plist { Matrix($1,$2) }
+
+matrix_plist:
+  matrix_params { [$1] }
+  | matrix_plist matrix_params  {$2 :: $1}
+
+matrix_params:
+  LBRACK LITERAL RBRACK {$2}
 
 vdecl_list:
     /* nothing */    { [] }
   | vdecl_list vdecl { $2 :: $1 }
 
 vdecl:
-   typ ID SEMI { ($1, $2) }
- | typ ID matrix_plist SEMI { ($1, $2)}
+   typ ID SEMI { ($1, $2 ) }
 
 stmt_list:
     /* nothing */  { [] }
