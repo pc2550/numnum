@@ -18,8 +18,8 @@ open Ast
 %nonassoc NOELSE
 %nonassoc ELSE
 %nonassoc ELIF
+%nonassoc NOLBRACK
 %nonassoc LBRACK
-
 %right ASSIGN
 %left OR
 %left AND
@@ -65,11 +65,11 @@ typ:
   | VOID { Void }
   | FLOAT { Float }
   | STRING { String }
-  | typ matrix_params { Matrix($1,$2) }
+  | typ matrix_params  %prec NOLBRACK { Matrix($1, List.rev $2) }
 
 matrix_params:
-    matrix_decl  {[$1]}
-  | matrix_params matrix_decl {[$2] :: $1}
+    matrix_decl %prec NOLBRACK {[$1]}
+  | matrix_params matrix_decl {$2 :: $1}
 
 matrix_decl:
   LBRACK LITERAL RBRACK {$2}
