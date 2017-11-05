@@ -13,12 +13,13 @@ open Ast
 %token <int> LITERAL
 %token <float> FLITERAL
 %token <string> ID SLITERAL
-%token MATRIX
 %token EOF
 
 %nonassoc NOELSE
 %nonassoc ELSE
 %nonassoc ELIF
+%nonassoc LBRACK
+
 %right ASSIGN
 %left OR
 %left AND
@@ -64,13 +65,13 @@ typ:
   | VOID { Void }
   | FLOAT { Float }
   | STRING { String }
-  | typ matrix_plist { Matrix($1,$2) }
-
-matrix_plist:
-  matrix_params { [$1] }
-  | matrix_plist matrix_params  {$2 :: $1}
+  | typ matrix_params { Matrix($1,$2) }
 
 matrix_params:
+    matrix_decl  {[$1]}
+  | matrix_params matrix_decl {[$2] :: $1}
+
+matrix_decl:
   LBRACK LITERAL RBRACK {$2}
 
 vdecl_list:
