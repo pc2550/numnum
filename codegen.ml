@@ -40,7 +40,7 @@ let translate (globals, functions) =
   let global_vars =
     let global_var m (t, n) =
       let init = L.const_int (ltype_of_typ t) 0
-      in StringMap.add n (L.define_global n init the_module) m
+      in StringMap.add n ((L.define_global n init the_module),t) m
     in List.fold_left global_var StringMap.empty globals in
   (* Declare printf(), which the print built-in function will call *)
   let printf_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
@@ -71,18 +71,18 @@ let translate (globals, functions) =
       let add_formal m (t, n) p =
         (L.set_value_name n p;
          let local = L.build_alloca (ltype_of_typ t) n builder
-         in (ignore (L.build_store p local builder); StringMap.add n local m)) in
+         in (ignore (L.build_store p local builder); StringMap.add n (local,t) m)) in
       let add_local m (t, n) =
         let local_var = L.build_alloca (ltype_of_typ t) n builder
-        in StringMap.add n local_var m in
+        in StringMap.add n (local_var,t) m in
       let formals =
         List.fold_left2 add_formal StringMap.empty fdecl.A.formals
           (Array.to_list (L.params the_function))
       in List.fold_left add_local formals fdecl.A.locals in
     (* Return the value for a variable or formal argument *)
     let lookup n =
-      try StringMap.find n local_vars
-      with | Not_found -> StringMap.find n global_vars in
+      try match (StringMap.find n local_vars) with (lt,t) -> lt
+      with | Not_found ->  match (StringMap.find n global_vars) with (lt,l) -> lt in
     (* Construct code for an expression; return its value *)
     let rec expr builder =
       function
