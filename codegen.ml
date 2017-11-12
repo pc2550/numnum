@@ -19,18 +19,23 @@ module StringMap = Map.Make(String)
   
 let translate (globals, functions) =
   let context = L.global_context () in
+
   let the_module = L.create_module context "NumNum"
-  and i32_t = L.i32_type context and i8_t = L.i8_type context
-  and i1_t = L.i1_type context and void_t = L.void_type context
+  and i32_t = L.i32_type context 
+  and i8_t = L.i8_type context
+  and i1_t = L.i1_type context 
+  and void_t = L.void_type context
   and float_t = L.double_type context
-  and string_t = L.pointer_type (L.i8_type context) in
-  let ltype_of_typ =
+  and string_t = L.pointer_type (L.i8_type context)
+  and array_t t dims = L.array_type t (List.fold_left (fun acc el -> acc*el) 1 dims) in
+  let rec ltype_of_typ =
     function
     | A.Int -> i32_t
     | A.Bool -> i1_t
     | A.Void -> void_t
     | A.String -> string_t
-    | A.Float -> float_t in
+    | A.Float -> float_t
+    | A.Matrix (t, dims) -> array_t (ltype_of_typ t) dims in 
   (* Declare each global variable; remember its value in a map *)
   let global_vars =
     let global_var m (t, n) =
@@ -87,6 +92,10 @@ let translate (globals, functions) =
       | A.BoolLit b -> L.const_int i1_t (if b then 1 else 0)
       | A.Noexpr -> L.const_int i32_t 0
       | A.Id s -> L.build_load (lookup s) s builder
+      (*| A.MatrixAccess ( s, params) -> 
+          let ind l = List.fold_left (fun acc el -> ) in
+          let e' = List.iteri (fun inx el -> (expr builder el) ) 0 params
+          in (ignore (L.build_store e' (lookup s) builder); e') *)
       | A.Binop (e1, op, e2) ->
           let e1' = expr builder e1
           and e2' = expr builder e2
