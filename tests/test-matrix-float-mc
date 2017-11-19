@@ -1,5 +1,9 @@
 
 int main(){
-	float [10][2] b;
+	int [10][2] b;
+	int z;
+	b[0][0] = 5;
+	z = b[0][0];
+	print(z);
 	return 0;
 }

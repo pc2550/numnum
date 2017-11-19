@@ -22,7 +22,9 @@ let check (globals, functions) =
   (* Raise an exception of the given rvalue type cannot be assigned to
      the given lvalue type *)
   let check_assign lvaluet rvaluet err =
-    if lvaluet == rvaluet then lvaluet else raise err
+    match rvaluet with
+        Matrix (t,l) -> if (string_of_typ lvaluet) == (string_of_typ t) then lvaluet else raise err
+      | _ -> if lvaluet == rvaluet then lvaluet else raise err
   in
     (**** Checking Global Variables ****)
     (**** Checking Functions ****)
@@ -105,6 +107,7 @@ let check (globals, functions) =
           | SLiteral _ -> String
           | BoolLit _ -> Bool
           | Id s -> type_of_identifier s
+          | MatrixAccess (s, dims) -> (ignore dims);type_of_identifier s 
           | (Binop (e1, op, e2) as e) ->
               let t1 = expr e1
               and t2 = expr e2

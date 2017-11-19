@@ -72,6 +72,7 @@ let rec string_of_expr = function
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s
+  | MatrixAccess (t,dims) -> t ^ (List.fold_left (fun acc el -> "[" ^ (string_of_expr el) ^ "]" ^ acc) "" dims)
   | Binop(e1, o, e2) -> 
         let l = string_of_expr e1 and r = string_of_expr e2 in
             (l ^ " " ^ string_of_op o ^ " " ^ r)
@@ -100,7 +101,7 @@ let rec string_of_typ = function
   | Void -> "void"
   | Float -> "float"
   | String -> "string"
-  | Matrix(t, l) -> (string_of_typ t) ^ (List.fold_left (fun acc el -> "[" ^ string_of_int el ^ "]" ^ acc) "" l)
+  | Matrix(t, l) -> (string_of_typ t)
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 

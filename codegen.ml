@@ -83,6 +83,13 @@ let translate (globals, functions) =
     let lookup n =
       try match (StringMap.find n local_vars) with (lt,t) -> lt
       with | Not_found ->  match (StringMap.find n global_vars) with (lt,l) -> lt in
+    (* Look up the dimmensions for a matrix *)
+    let lookup_dims n =
+      let get_dims t = match t with 
+          A.Matrix (t,dims) -> dims
+        | _ -> [] in
+      try match (StringMap.find n local_vars) with (lt,t) -> get_dims t
+      with | Not_found ->  match (StringMap.find n global_vars) with (lt,t) -> get_dims t in
     (* Construct code for an expression; return its value *)
     let rec expr builder =
       function
@@ -92,10 +99,15 @@ let translate (globals, functions) =
       | A.BoolLit b -> L.const_int i1_t (if b then 1 else 0)
       | A.Noexpr -> L.const_int i32_t 0
       | A.Id s -> L.build_load (lookup s) s builder
-      (*| A.MatrixAccess ( s, params) -> 
-          let ind l = List.fold_left (fun acc el -> ) in
-          let e' = List.iteri (fun inx el -> (expr builder el) ) 0 params
-          in (ignore (L.build_store e' (lookup s) builder); e') *)
+      | A.MatrixAccess ( s, params) -> 
+          let dims = lookup_dims s in
+          let acc_params = List.map (fun el -> (expr builder el)) params in
+          let get_pos = List.fold_right2 
+                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
+                          acc_params 
+                          dims 
+                          (L.const_int i32_t 0) in
+          L.build_load (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) "tmp" builder
       | A.Binop (e1, op, e2) ->
           let e1' = expr builder e1
           and e2' = expr builder e2
