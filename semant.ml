@@ -108,6 +108,7 @@ let check (globals, functions) =
           | BoolLit _ -> Bool
           | Id s -> type_of_identifier s
           | MatrixAccess (s, dims) -> (ignore dims);type_of_identifier s 
+          | MatrixAssign (s,dims,expr) -> (ignore dims);type_of_identifier s 
           | (Binop (e1, op, e2) as e) ->
               let t1 = expr e1
               and t2 = expr e2

@@ -119,10 +119,11 @@ expr:
   | expr GEQ    expr { Binop($1, Geq,   $3) }
   | expr AND    expr { Binop($1, And,   $3) }
   | expr OR     expr { Binop($1, Or,    $3) }
-  | ID matrix_accs { MatrixAccess($1, $2) }
+  | ID matrix_accs { MatrixAccess($1, List.rev $2) }
   | MINUS expr %prec NEG { Unop(Neg, $2) }
   | NOT expr         { Unop(Not, $2) }
   | ID ASSIGN expr   { Assign($1, $3) }
+  | ID matrix_accs ASSIGN expr { MatrixAssign($1, List.rev $2, $4) }
   | ID LPAREN actuals_opt RPAREN { Call($1, $3) }
   | LPAREN expr RPAREN { $2 }
 

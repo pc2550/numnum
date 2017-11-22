@@ -23,6 +23,7 @@ type expr =
   | Assign of string * expr
   | Call of string * expr list
   | MatrixAccess of string * expr list
+  | MatrixAssign of string * expr list * expr
   | Noexpr
 
 type stmt =

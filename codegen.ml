@@ -150,6 +150,16 @@ let translate (globals, functions) =
       | A.Assign (s, e) ->
           let e' = expr builder e
           in (ignore (L.build_store e' (lookup s) builder); e')
+      | A.MatrixAssign (s,dims_assign,e) -> 
+          let e' = expr builder e in
+          let dims = lookup_dims s in
+          let acc_params = List.map (fun el -> (expr builder el)) dims_assign in
+          let get_pos = List.fold_right2 
+                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
+                          acc_params 
+                          dims 
+                          (L.const_int i32_t 0) in
+          L.build_store  e' (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder
       | A.Call ("print", ([ e ])) | A.Call ("printb", ([ e ])) ->
           L.build_call printf_func [| int_format_str; expr builder e |]
             "printf" builder
