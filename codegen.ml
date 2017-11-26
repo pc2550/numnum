@@ -45,6 +45,8 @@ let translate (globals, functions) =
   (* Declare printf(), which the print built-in function will call *)
   let printf_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
   let printf_func = L.declare_function "printf" printf_t the_module in
+  let foo_t = L.var_arg_function_type i32_t [||] in
+  let foo_func = L.declare_function "foo" foo_t the_module in
   (* Define each function (arguments and return type) so we can call it *)
   let function_decls =
     let function_decl m fdecl =
@@ -169,6 +171,9 @@ let translate (globals, functions) =
       | A.Call ("printstr", ([ e ])) ->
           L.build_call printf_func [| string_format_str; expr builder e |]
             "printf" builder
+      | A.Call ("foo", ([e])) ->
+          L.build_call foo_func [||]
+            "foo" builder
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (expr builder) (List.rev act)) in
