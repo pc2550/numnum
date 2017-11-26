@@ -26,6 +26,7 @@ type stmt =
   | Expr of expr
   | Return of expr
   | If of expr * stmt * stmt
+  | Elif of expr list * stmt list
   | For of expr * expr * expr * stmt
   | While of expr * stmt
 
