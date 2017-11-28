@@ -52,6 +52,14 @@ let check (globals, functions) =
               locals = [];
               body = [];
             }
+            (StringMap.add "testfunc"
+            {
+              typ = Int;
+              fname = "testfunc";
+              formals = [(Int, "x")];
+              locals = [];
+              body = [];
+            }
             (StringMap.add "printfl"
                {
                  typ = Void;
@@ -67,7 +75,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  }))) in
+                  })))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in

@@ -8,7 +8,9 @@
 # Path to the LLVM interpreter
 LLI="lli"
 #LLI="/usr/local/opt/llvm/bin/lli"
-
+LLC="llc"
+LINKER="llvm-link"
+CLANG="clang"
 # Path to the numnum compiler.  Usually "./numnum.native"
 # Try "_build/numnum.native" if ocamlbuild was unable to create a symbolic link.
 NUMNUM="./numnum.native"
@@ -87,6 +89,7 @@ Check() {
 
     generatedfiles="$generatedfiles ${basename}.ll ${basename}.out" &&
     Run "$NUMNUM" "<" $1 ">" "${basename}.ll" &&
+    Run "$LINKER" "${basename}.ll" "test.ll" "-o" "linked.ll"
     Run "$LLI" "${basename}.ll" ">" "${basename}.out" &&
     Compare ${basename}.out ${reffile}.out ${basename}.diff
 
