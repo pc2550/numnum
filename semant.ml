@@ -180,9 +180,9 @@ let check (globals, functions) =
                      if (fname = "dim") then
                          let e = List.hd actuals in
                          match (e) with
-                         | Id(m) -> match (type_of_identifier m) with 
+                         | Id(m) -> (match (type_of_identifier m) with 
                              | Matrix(_,_) -> ()
-                             | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
+                             | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e))))
                          | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
               else
 
