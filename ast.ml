@@ -102,7 +102,7 @@ let rec string_of_typ = function
   | Void -> "void"
   | Float -> "float"
   | String -> "string"
-  | Matrix(t, l) -> (string_of_typ t)
+  | Matrix(t, l) -> (string_of_typ t) ^ (List.fold_left (fun acc el -> acc ^ "[" ^ (string_of_int el) ^ "]" ) "" l)
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
