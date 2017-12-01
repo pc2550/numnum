@@ -38,7 +38,19 @@ let check (globals, functions) =
        (List.map (fun fd -> fd.fname) functions);
      (* Function declaration for a named function *)
      let built_in_decls =
-       StringMap.add "print"
+       StringMap.add "dim"
+         {
+           typ = Int;
+           fname = "dim";
+           (* The arguments to Matrix
+           don't matter, they are overridden in the checker below, but we need
+           them here for this to compile *)
+           formals = [ (Matrix(Int, [1]), "x") ]; 
+           locals = [];
+           body = [];
+         }
+ 
+       (StringMap.add "print"
          {
            typ = Void;
            fname = "print";
@@ -69,7 +81,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  }))) in
+                  })))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -165,6 +177,15 @@ let check (globals, functions) =
                            ((string_of_int (List.length fd.formals)) ^
                               (" arguments in " ^ (string_of_expr call)))))
                  else
+                     if (fname = "dim") then
+                         let e = List.hd actuals in
+                         match (e) with
+                         | Id(m) -> match (type_of_identifier m) with 
+                             | Matrix(_,_) -> ()
+                             | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
+                         | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
+              else
+
                    List.iter2
                      (fun (ft, _) e ->
                         let et = expr e

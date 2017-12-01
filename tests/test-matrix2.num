@@ -1,0 +1,8 @@
+
+int main(){
+	int [10][2] b;
+	int c;
+	c = dim(b);
+	print(c);
+	return 0;
+}
