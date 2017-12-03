@@ -34,6 +34,7 @@ rule token = parse
 | "while"  { WHILE }
 | "return" { RETURN }
 | "break"  { BREAK } (*numnum*)
+| "continue " { CONTINUE } (* numnum *)
 | "int"    { INT }
 | "bool"   { BOOL }
 | "void"   { VOID }

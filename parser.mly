@@ -8,7 +8,7 @@ open Ast
 %token PLUS MINUS TIMES DIVIDE ASSIGN NOT
 %token EQ NEQ LT LEQ GT GEQ TRUE FALSE AND OR
 %token RETURN IF ELSE FOR WHILE INT BOOL VOID
-%token RBRACK LBRACK ELIF BREAK FLOAT STRING
+%token RBRACK LBRACK ELIF BREAK CONTINUE FLOAT STRING
 %token SHAPE DIMS FUNC
 %token <int> LITERAL
 %token <float> FLITERAL
@@ -96,6 +96,8 @@ stmt:
   | FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt
      { For($3, $5, $7, $9) }
   | WHILE LPAREN expr RPAREN stmt { While($3, $5) }
+  | BREAK { Break }
+  | CONTINUE { Continue }
 
 expr_opt:
     /* nothing */ { Noexpr }
