@@ -176,26 +176,6 @@ let translate (globals, functions) =
                   (L.build_br merge_bb);
                 ignore (L.build_cond_br bool_val then_bb else_bb builder);
                 L.builder_at_end context merge_bb))
-      | A.Elif (exprs, stmts) ->
-          (match exprs with 
-            [] -> 
-              builder 
-          
-          | _ ->
-	      let bool_val = expr builder (List.hd exprs) in
-	      let merge_bb = L.append_block context "merge" the_function in
-	      let then_bb = L.append_block context "then" the_function
-	      in
-		(add_terminal (stmt (L.builder_at_end context then_bb) (List.hd stmts))
-		   (L.build_br merge_bb);
-		 let else_bb = L.append_block context "else" the_function
-		 in
-		   (add_terminal
-		      (stmt (L.builder_at_end context else_bb) (A.Elif (List.tl exprs, List.tl stmts)))
-		      (L.build_br merge_bb);
-		    ignore (L.build_cond_br bool_val then_bb else_bb builder);
-		    L.builder_at_end context merge_bb))
-        )
       | A.While (predicate, body) ->
           let pred_bb = L.append_block context "while" the_function
           in
