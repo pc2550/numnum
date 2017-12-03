@@ -93,8 +93,8 @@ stmt:
   | LBRACE stmt_list RBRACE { Block(List.rev $2) }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7) }
-  | IF LPAREN expr RPAREN stmt elif_list %prec NOELSE { Elif(($3 :: (List.rev(fst $6))), (List.rev((Block([]) :: (List.rev ($5 :: (List.rev (snd $6)))))))) }
-  | IF LPAREN expr RPAREN stmt elif_list ELSE stmt { Elif(($3 :: (List.rev(fst $6))), (List.rev(($8 :: (List.rev ($5 :: (List.rev (snd $6)))))))) }
+  | IF LPAREN expr RPAREN stmt elif_list %prec NOELSE { Elif(($3 :: fst $6), ($5 :: snd $6)) }
+  | IF LPAREN expr RPAREN stmt elif_list ELSE stmt { Elif(($3 :: fst $6), ($8 :: ($5 :: snd $6))) }
   | FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt
      { For($3, $5, $7, $9) }
   | WHILE LPAREN expr RPAREN stmt { While($3, $5) }
