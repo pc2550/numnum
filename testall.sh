@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Regression testing script for NumnuM
 # Step through a list of files
@@ -6,7 +6,7 @@
 #  Compile and check the error of each expected-to-fail test
 
 # Path to the LLVM interpreter
-LLI="lli-5.0"
+LLI="lli"
 #LLI="/usr/local/opt/llvm/bin/lli"
 
 # Path to the numnum compiler.  Usually "./numnum.native"
