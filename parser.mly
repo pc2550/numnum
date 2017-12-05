@@ -18,6 +18,8 @@ open Ast
 %nonassoc NOELSE
 %nonassoc ELSE
 %nonassoc ELIF
+%nonassoc NOLBRACK
+%nonassoc LBRACK
 %right ASSIGN
 %left OR
 %left AND
@@ -49,16 +51,6 @@ fdecl:
 	 body = List.rev $8 } }
 
 
-matrix_size:
-  INT {Int}
-
-matrix_plist:
-  matrix_params { [$1] }
-  | matrix_plist matrix_params {$2 :: $1}
-
-matrix_params:
-  LBRACK matrix_size RBRACK {$2}
-
 formals_opt:
     /* nothing */ { [] }
   | formal_list   { List.rev $1 }
@@ -72,15 +64,22 @@ typ:
   | BOOL { Bool }
   | VOID { Void }
   | FLOAT { Float }
-  | STRING { String}
+  | STRING { String }
+  | typ matrix_params  %prec NOLBRACK { Matrix($1, List.rev $2) }
+
+matrix_params:
+    matrix_decl %prec NOLBRACK {[$1]}
+  | matrix_params matrix_decl {$2 :: $1}
+
+matrix_decl:
+  LBRACK LITERAL RBRACK {$2}
 
 vdecl_list:
     /* nothing */    { [] }
   | vdecl_list vdecl { $2 :: $1 }
 
 vdecl:
-   typ ID SEMI { ($1, $2) }
- | typ ID matrix_plist SEMI { ($1, $2)}
+   typ ID SEMI { ($1, $2 ) }
 
 stmt_list:
     /* nothing */  { [] }
@@ -129,11 +128,20 @@ expr:
   | expr GEQ    expr { Binop($1, Geq,   $3) }
   | expr AND    expr { Binop($1, And,   $3) }
   | expr OR     expr { Binop($1, Or,    $3) }
+  | ID matrix_accs { MatrixAccess($1, List.rev $2) }
   | MINUS expr %prec NEG { Unop(Neg, $2) }
   | NOT expr         { Unop(Not, $2) }
   | ID ASSIGN expr   { Assign($1, $3) }
+  | ID matrix_accs ASSIGN expr { MatrixAssign($1, List.rev $2, $4) }
   | ID LPAREN actuals_opt RPAREN { Call($1, $3) }
   | LPAREN expr RPAREN { $2 }
+
+matrix_accs:
+    matrix_acc %prec NOLBRACK {[$1]}
+  | matrix_accs matrix_acc {$2 :: $1}
+
+matrix_acc:
+  LBRACK expr RBRACK {$2}
 
 actuals_opt:
     /* nothing */ { [] }

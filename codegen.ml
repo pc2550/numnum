@@ -19,23 +19,28 @@ module StringMap = Map.Make(String)
   
 let translate (globals, functions) =
   let context = L.global_context () in
+
   let the_module = L.create_module context "NumNum"
-  and i32_t = L.i32_type context and i8_t = L.i8_type context
-  and i1_t = L.i1_type context and void_t = L.void_type context
+  and i32_t = L.i32_type context 
+  and i8_t = L.i8_type context
+  and i1_t = L.i1_type context 
+  and void_t = L.void_type context
   and float_t = L.double_type context
-  and string_t = L.pointer_type (L.i8_type context) in
-  let ltype_of_typ =
+  and string_t = L.pointer_type (L.i8_type context)
+  and array_t t dims = L.array_type t (List.fold_left (fun acc el -> acc*el) 1 dims) in
+  let rec ltype_of_typ =
     function
     | A.Int -> i32_t
     | A.Bool -> i1_t
     | A.Void -> void_t
     | A.String -> string_t
-    | A.Float -> float_t in
+    | A.Float -> float_t
+    | A.Matrix (t, dims) -> array_t (ltype_of_typ t) dims in 
   (* Declare each global variable; remember its value in a map *)
   let global_vars =
     let global_var m (t, n) =
       let init = L.const_int (ltype_of_typ t) 0
-      in StringMap.add n (L.define_global n init the_module) m
+      in StringMap.add n ((L.define_global n init the_module),t) m
     in List.fold_left global_var StringMap.empty globals in
   (* Declare printf(), which the print built-in function will call *)
   let printf_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
@@ -66,18 +71,25 @@ let translate (globals, functions) =
       let add_formal m (t, n) p =
         (L.set_value_name n p;
          let local = L.build_alloca (ltype_of_typ t) n builder
-         in (ignore (L.build_store p local builder); StringMap.add n local m)) in
+         in (ignore (L.build_store p local builder); StringMap.add n (local,t) m)) in
       let add_local m (t, n) =
         let local_var = L.build_alloca (ltype_of_typ t) n builder
-        in StringMap.add n local_var m in
+        in StringMap.add n (local_var,t) m in
       let formals =
         List.fold_left2 add_formal StringMap.empty fdecl.A.formals
           (Array.to_list (L.params the_function))
       in List.fold_left add_local formals fdecl.A.locals in
     (* Return the value for a variable or formal argument *)
     let lookup n =
-      try StringMap.find n local_vars
-      with | Not_found -> StringMap.find n global_vars in
+      try match (StringMap.find n local_vars) with (lt,_) -> lt
+      with | Not_found ->  match (StringMap.find n global_vars) with (lt,_) -> lt in
+    (* Look up the dimmensions for a matrix *)
+    let lookup_dims n =
+      let get_dims t = match t with 
+          A.Matrix (_,dims) -> dims
+        | _ -> [] in
+      try match (StringMap.find n local_vars) with (_,t) -> get_dims t
+      with | Not_found ->  match (StringMap.find n global_vars) with (_,t) -> get_dims t in
     (* Construct code for an expression; return its value *)
     let rec expr builder =
       function
@@ -87,6 +99,15 @@ let translate (globals, functions) =
       | A.BoolLit b -> L.const_int i1_t (if b then 1 else 0)
       | A.Noexpr -> L.const_int i32_t 0
       | A.Id s -> L.build_load (lookup s) s builder
+      | A.MatrixAccess ( s, params) -> 
+          let dims = lookup_dims s in
+          let acc_params = List.map (fun el -> (expr builder el)) params in
+          let get_pos = List.fold_right2 
+                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
+                          acc_params 
+                          dims 
+                          (L.const_int i32_t 0) in
+          L.build_load (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) "tmp" builder
       | A.Binop (e1, op, e2) ->
           let e1' = expr builder e1
           and e2' = expr builder e2
@@ -129,6 +150,16 @@ let translate (globals, functions) =
       | A.Assign (s, e) ->
           let e' = expr builder e
           in (ignore (L.build_store e' (lookup s) builder); e')
+      | A.MatrixAssign (s,dims_assign,e) -> 
+          let e' = expr builder e in
+          let dims = lookup_dims s in
+          let acc_params = List.map (fun el -> (expr builder el)) dims_assign in
+          let get_pos = List.fold_right2 
+                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
+                          acc_params 
+                          dims 
+                          (L.const_int i32_t 0) in
+          L.build_store  e' (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder
       | A.Call ("print", ([ e ])) | A.Call ("printb", ([ e ])) ->
           L.build_call printf_func [| int_format_str; expr builder e |]
             "printf" builder
@@ -138,6 +169,11 @@ let translate (globals, functions) =
       | A.Call ("printstr", ([ e ])) ->
           L.build_call printf_func [| string_format_str; expr builder e |]
             "printf" builder
+      | A.Call ("dim", ([ e ])) ->
+              match e with | A.Id(t) -> 
+                  let d= L.build_alloca  i32_t "tmp" builder in
+                  (ignore(L.build_store (L.const_int i32_t (List.length
+                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder)
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (expr builder) (List.rev act)) in

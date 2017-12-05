@@ -5,9 +5,12 @@ type op = Add | Sub | Mult | Div | Equal | Neq | Less | Leq | Greater | Geq |
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Void | Float | String
 
-type bind = typ * string
+type typ = Int | Bool | Void 
+        | Float | String 
+        | Matrix of typ * int list
+
+type bind = typ * string 
 
 type expr =
     Literal of int
@@ -19,6 +22,8 @@ type expr =
   | Unop of uop * expr
   | Assign of string * expr
   | Call of string * expr list
+  | MatrixAccess of string * expr list
+  | MatrixAssign of string * expr list * expr
   | Noexpr
 
 type stmt =
@@ -37,6 +42,8 @@ type func_decl = {
     locals : bind list;
     body : stmt list;
   }
+
+
 
 type program = bind list * func_decl list
 
@@ -67,6 +74,9 @@ let rec string_of_expr = function
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s
+  | MatrixAccess (t,dims) -> t ^ (List.fold_left (fun acc el -> "[" ^ (string_of_expr el) ^ "]" ^ acc) "" dims)
+  | MatrixAssign (t,dims,e) -> let r = string_of_expr e in
+      t ^ (List.fold_left (fun acc el -> "[" ^ (string_of_expr el) ^ "]" ^ acc )"" dims) ^ " = " ^ r
   | Binop(e1, o, e2) -> 
         let l = string_of_expr e1 and r = string_of_expr e2 in
             (l ^ " " ^ string_of_op o ^ " " ^ r)
@@ -93,12 +103,13 @@ let rec string_of_stmt = function
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
 
-let string_of_typ = function
+let rec string_of_typ = function
     Int -> "int"
   | Bool -> "bool"
   | Void -> "void"
   | Float -> "float"
   | String -> "string"
+  | Matrix(t, l) -> (string_of_typ t) ^ (List.fold_left (fun acc el -> acc ^ "[" ^ (string_of_int el) ^ "]" ) "" l)
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 

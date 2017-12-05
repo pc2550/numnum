@@ -13,7 +13,8 @@ LLI="lli"
 # Try "_build/numnum.native" if ocamlbuild was unable to create a symbolic link.
 NUMNUM="./numnum.native"
 #NUMNUM="_build/numnum.native"
-
+CLANG="clang"
+LLC="llc"
 # Set time limit for all operations
 ulimit -t 30
 
@@ -87,6 +88,7 @@ Check() {
 
     generatedfiles="$generatedfiles ${basename}.ll ${basename}.out" &&
     Run "$NUMNUM" "<" $1 ">" "${basename}.ll" &&
+    Run "$LLC" "${basename}.ll"
     Run "$LLI" "${basename}.ll" ">" "${basename}.out" &&
     Compare ${basename}.out ${reffile}.out ${basename}.diff
 

@@ -22,7 +22,10 @@ let check (globals, functions) =
   (* Raise an exception of the given rvalue type cannot be assigned to
      the given lvalue type *)
   let check_assign lvaluet rvaluet err =
-    if lvaluet == rvaluet then lvaluet else raise err
+    match rvaluet with
+        Matrix (t,_) -> if (string_of_typ lvaluet) == (string_of_typ t)
+                         then lvaluet else raise err
+      | _ -> if lvaluet == rvaluet then lvaluet else raise err
   in
     (**** Checking Global Variables ****)
     (**** Checking Functions ****)
@@ -36,7 +39,19 @@ let check (globals, functions) =
        (List.map (fun fd -> fd.fname) functions);
      (* Function declaration for a named function *)
      let built_in_decls =
-       StringMap.add "print"
+       StringMap.add "dim"
+         {
+           typ = Int;
+           fname = "dim";
+           (* The arguments to Matrix
+           don't matter, they are overridden in the checker below, but we need
+           them here for this to compile *)
+           formals = [ (Matrix(Int, [1]), "x") ]; 
+           locals = [];
+           body = [];
+         }
+ 
+       (StringMap.add "print"
          {
            typ = Void;
            fname = "print";
@@ -67,7 +82,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  }))) in
+                  })))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -105,6 +120,18 @@ let check (globals, functions) =
           | SLiteral _ -> String
           | BoolLit _ -> Bool
           | Id s -> type_of_identifier s
+          | MatrixAccess (s, _) -> type_of_identifier s 
+          | (MatrixAssign (s,_,e) as ex) -> 
+              let lt = type_of_identifier s
+              and rt = expr e
+              in
+                check_assign lt rt
+                  (Failure
+                     ("illegal assignment " ^
+                        ((string_of_typ lt) ^
+                           (" = " ^
+                              ((string_of_typ rt) ^
+                                 (" in " ^ (string_of_expr ex)))))))
           | (Binop (e1, op, e2) as e) ->
               let t1 = expr e1
               and t2 = expr e2
@@ -161,6 +188,15 @@ let check (globals, functions) =
                            ((string_of_int (List.length fd.formals)) ^
                               (" arguments in " ^ (string_of_expr call)))))
                  else
+                     if (fname = "dim") then
+                         let e = List.hd actuals in
+                         match (e) with
+                         | Id(m) -> (match (type_of_identifier m) with 
+                             | Matrix(_,_) -> ()
+                             | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e))))
+                         | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
+              else
+
                    List.iter2
                      (fun (ft, _) e ->
                         let et = expr e
