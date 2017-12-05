@@ -74,6 +74,8 @@ let rec string_of_expr = function
   | BoolLit(false) -> "false"
   | Id(s) -> s
   | MatrixAccess (t,dims) -> t ^ (List.fold_left (fun acc el -> "[" ^ (string_of_expr el) ^ "]" ^ acc) "" dims)
+  | MatrixAssign (t,dims,e) -> let r = string_of_expr e in
+      t ^ (List.fold_left (fun acc el -> "[" ^ (string_of_expr el) ^ "]" ^ acc )"" dims) ^ " = " ^ r
   | Binop(e1, o, e2) -> 
         let l = string_of_expr e1 and r = string_of_expr e2 in
             (l ^ " " ^ string_of_op o ^ " " ^ r)

@@ -81,15 +81,15 @@ let translate (globals, functions) =
       in List.fold_left add_local formals fdecl.A.locals in
     (* Return the value for a variable or formal argument *)
     let lookup n =
-      try match (StringMap.find n local_vars) with (lt,t) -> lt
-      with | Not_found ->  match (StringMap.find n global_vars) with (lt,l) -> lt in
+      try match (StringMap.find n local_vars) with (lt,_) -> lt
+      with | Not_found ->  match (StringMap.find n global_vars) with (lt,_) -> lt in
     (* Look up the dimmensions for a matrix *)
     let lookup_dims n =
       let get_dims t = match t with 
-          A.Matrix (t,dims) -> dims
+          A.Matrix (_,dims) -> dims
         | _ -> [] in
-      try match (StringMap.find n local_vars) with (lt,t) -> get_dims t
-      with | Not_found ->  match (StringMap.find n global_vars) with (lt,t) -> get_dims t in
+      try match (StringMap.find n local_vars) with (_,t) -> get_dims t
+      with | Not_found ->  match (StringMap.find n global_vars) with (_,t) -> get_dims t in
     (* Construct code for an expression; return its value *)
     let rec expr builder =
       function

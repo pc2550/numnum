@@ -7,7 +7,7 @@
 .PHONY : numnum.native
 
 numnum.native :
-	ocamlbuild -use-ocamlfind -pkgs llvm,llvm.analysis -cflags -w,+a-4 \
+	ocamlbuild -use-ocamlfind -pkgs llvm,llvm.analysis,llvm.bitwriter,llvm.bitreader,llvm.linker,llvm.target -cflags -w,+a-4 \
 		numnum.native
 
 # "make clean" removes all generated files
@@ -24,7 +24,7 @@ OBJS = ast.cmx codegen.cmx parser.cmx scanner.cmx semant.cmx numnum.cmx
 
 numnum : $(OBJS)
 	ocamlfind ocamlopt -linkpkg -package llvm -package llvm.analysis $(OBJS) -o numnum
-
+	
 scanner : scanner.mll
 	ocamllex scanner.mll
 
