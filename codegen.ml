@@ -170,10 +170,12 @@ let translate (globals, functions) =
           L.build_call printf_func [| string_format_str; expr builder e |]
             "printf" builder
       | A.Call ("dim", ([ e ])) ->
-              match e with | A.Id(t) -> 
-                  let d= L.build_alloca  i32_t "tmp" builder in
+              (match e with 
+               A.Id(t) -> 
+                  let d = L.build_alloca  i32_t "tmp" builder in
                   (ignore(L.build_store (L.const_int i32_t (List.length
-                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder)
+                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder) 
+              | _ -> raise (Failure "cannot call dims on that"))
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (expr builder) (List.rev act)) in
