@@ -12,6 +12,7 @@ http://llvm.moe/ocaml/
 
 *)
 module L = Llvm
+module LT = Llvm_target
   
 module A = Ast
   
@@ -19,12 +20,17 @@ module StringMap = Map.Make(String)
   
 let translate (globals, functions) =
   let context = L.global_context () in
-  let the_module = L.create_module context "NumNum" 
-  and i32_t = L.i32_type context and i8_t = L.i8_type context
+  let the_module = L.create_module context "NumNum" in
+  let machinearc ="x86_64" in
+  let lltarget  = LT.Target.by_triple machinearc in
+  let llmachine = LT.TargetMachine.create ~triple:machinearc lltarget in
+  let lldly     = LT.TargetMachine.data_layout llmachine in
+  (*let () = L.set_target_triple  (LT.TargetMachine.triple llmachine) the_module;
+      L.set_data_layout (LT.DataLayout.as_string lldly) the_module in*)
+  let i32_t = L.i32_type context and i8_t = L.i8_type context
   and i1_t = L.i1_type context and void_t = L.void_type context
   and float_t = L.double_type context
   and string_t = L.pointer_type (L.i8_type context) in
-  let layout = L.set_data_layout "e-m:e-i64:64-f80:128-n8:16:32:64-S128" the_module;"layout" in
   let ltype_of_typ =
     function
     | A.Int -> i32_t
