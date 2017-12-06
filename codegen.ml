@@ -179,8 +179,9 @@ let translate (globals, functions) =
       | A.Elif (exprs, stmts) ->
           (match exprs with 
             [] -> 
-              builder 
-          
+              let else_bb = L.append_block context "else" the_function
+              in
+                   (stmt (L.builder_at_end context else_bb) (List.hd stmts)); 
           | _ ->
 	      let bool_val = expr builder (List.hd exprs) in
 	      let merge_bb = L.append_block context "merge" the_function in
