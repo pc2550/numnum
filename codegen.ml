@@ -38,13 +38,20 @@ let translate (globals, functions) =
     | A.Matrix (t, dims) -> array_t (ltype_of_typ t) dims in 
   (* Declare each global variable; remember its value in a map *)
   let global_vars =
+    let errno = (L.define_global "errno" (L.const_int i32_t 0) the_module,A.Int) in
+    let () = L.set_linkage L.Linkage.Available_externally (fst errno) in
     let global_var m (t, n) =
       let init = L.const_int (ltype_of_typ t) 0
       in StringMap.add n ((L.define_global n init the_module),t) m
-    in List.fold_left global_var StringMap.empty globals in
+    in List.fold_left global_var (StringMap.singleton "errno" errno) globals in
+
   (* Declare printf(), which the print built-in function will call *)
   let printf_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
   let printf_func = L.declare_function "printf" printf_t the_module in
+  let open_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t;i32_t |] in
+  let open_func = L.declare_function "open" open_t the_module in
+  let read_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type i8_t; i32_t |] in
+  let read_func = L.declare_function "read" read_t the_module in
   (* Define each function (arguments and return type) so we can call it *)
   let function_decls =
     let function_decl m fdecl =
@@ -170,10 +177,14 @@ let translate (globals, functions) =
           L.build_call printf_func [| string_format_str; expr builder e |]
             "printf" builder
       | A.Call ("dim", ([ e ])) ->
-              match e with | A.Id(t) -> 
+              (match e with | A.Id(t) -> 
                   let d= L.build_alloca  i32_t "tmp" builder in
                   (ignore(L.build_store (L.const_int i32_t (List.length
-                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder)
+                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder))
+      | A.Call ("open", ([ e ; e2 ])) ->
+              (L.build_call open_func [| expr builder e;expr builder e2|] "open" builder)
+      | A.Call ("read", ([ e ; e2 ; e3 ])) -> 
+               (L.build_call read_func [| expr builder e;expr builder e2;expr builder e3|] "read" builder)
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (expr builder) (List.rev act)) in

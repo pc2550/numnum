@@ -1,0 +1,18 @@
+
+int main()
+{
+  string path;
+  string buff;
+  int flags;
+  int fd;
+  int ret;
+  path = "./4chars.txt";
+  buff = "       read";
+  flags = 0;
+  fd = open(path,flags);
+  print(fd);
+  ret = read(fd,buff,4);
+  print(ret);
+  printstr(buff);
+  return 0;
+}
