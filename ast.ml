@@ -5,7 +5,6 @@ type op = Add | Sub | Mult | Div | Equal | Neq | Less | Leq | Greater | Geq |
 
 type uop = Neg | Not
 
-
 type typ = Int | Bool | Void 
         | Float | String 
         | Matrix of typ * int list

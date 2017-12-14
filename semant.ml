@@ -2,7 +2,8 @@
 open Ast
   
 module StringMap = Map.Make(String)
-  
+
+
 (* Semantic checking of a program. Returns void if successful,
    throws an exception if something is wrong.
 
@@ -23,8 +24,8 @@ let check (globals, functions) =
      the given lvalue type *)
   let check_assign lvaluet rvaluet err =
     match rvaluet with
-        Matrix (t,_) -> if (string_of_typ lvaluet) == (string_of_typ t)
-                         then lvaluet else raise err
+        Matrix (t,_) -> if (lvaluet) == (t)
+                         then lvaluet else lvaluet(*raise err*)
       | _ -> if lvaluet == rvaluet then lvaluet else raise err
   in
     (**** Checking Global Variables ****)
@@ -71,7 +72,7 @@ let check (globals, functions) =
          {
            typ = Int;
            fname = "read";
-           formals = [(Int,"w"); (Matrix(Int, [1])); (Int,"y") ];
+           formals = [(String,"w"); ((Matrix( Int , [])), "x") ];
            locals = [];
            body = [];
          }
