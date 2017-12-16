@@ -72,7 +72,7 @@ let check (globals, functions) =
          {
            typ = Int;
            fname = "read";
-           formals = [(String,"w"); ((Matrix( Int , [])), "x") ];
+           formals = [(String,"w"); ((Matrix( Byte , [])), "x") ];
            locals = [];
            body = [];
          }
@@ -93,8 +93,7 @@ let check (globals, functions) =
               body = [];
             }
             (StringMap.add "printfl"
-               {
-                 typ = Void;
+               {                 typ = Void;
                  fname = "printfl";
                  formals = [ (Float, "x") ];
                  locals = [];
@@ -137,6 +136,12 @@ let check (globals, functions) =
         let type_of_identifier s =
           try StringMap.find s symbols
           with | Not_found -> raise (Failure ("undeclared identifier " ^ s)) in
+        let type_of_matrix_identifier s =
+          try let sym = StringMap.find s symbols in
+            match sym with 
+               Matrix (t,_) -> t
+               | _  -> raise (Failure ("identifier isn't a matrix " ^ s))
+          with | Not_found -> raise (Failure ("undeclared identifier " ^ s)) in
         (* Return the type of an expression or throw an exception *)
         let rec expr =
           function
@@ -145,7 +150,7 @@ let check (globals, functions) =
           | SLiteral _ -> String
           | BoolLit _ -> Bool
           | Id s -> type_of_identifier s
-          | MatrixAccess (s, _) -> type_of_identifier s 
+          | MatrixAccess (s, _) -> type_of_matrix_identifier s 
           | (MatrixAssign (s,_,e) as ex) -> 
               let lt = type_of_identifier s
               and rt = expr e

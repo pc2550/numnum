@@ -1,0 +1,13 @@
+int main()
+{
+  string path;
+  byte[1] a;
+  byte[1] b;
+  byte c;
+  path = "./tests/1byte";
+  read(path, a);
+  read(path, b);
+  c = a[0]+b[0];
+  printbyte(c);
+  return 0;
+}

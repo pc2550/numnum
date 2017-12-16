@@ -54,6 +54,8 @@ let translate (globals, functions) =
   let open_func = L.declare_function "open" open_t the_module in
   let read_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type i32_t; i32_t |] in
   let read_func = L.declare_function "read" read_t the_module in
+  let readbyte_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type i8_t; i32_t |] in
+  let readbyte_func = L.declare_function "read" readbyte_t the_module in
   let close_t = L.var_arg_function_type i32_t [| i32_t |] in
   let close_func = L.declare_function "close" close_t the_module in
   (* Define each function (arguments and return type) so we can call it *)
@@ -199,8 +201,10 @@ let translate (globals, functions) =
                 let arrptr = (lookup ev2) in
                 let arrsize = (List.fold_left (fun acc el -> acc*el) 1 (lookup_dims ev2))  in 
                 let fd = (L.build_call open_func [| ev ; L.const_int i32_t 0|] "open" builder) in
-                let ret = (L.build_call read_func [| fd ;(L.build_gep arrptr [|L.const_int i32_t 0;L.const_int i32_t 0|] 
-                                                  "tmp" builder);L.const_int i32_t (arrsize*4)|] "read" builder) in
+                let ret = (L.build_call readbyte_func 
+                                              [| fd ;
+                                                (L.build_gep arrptr [|L.const_int i32_t 0;L.const_int i32_t 0|] "tmp" builder);
+                                                 L.const_int i32_t (arrsize*4)|] "read" builder)  in
                 (ignore (L.build_call close_func [| fd |] "close" builder));ret
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
