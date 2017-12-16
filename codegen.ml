@@ -56,6 +56,10 @@ let translate (globals, functions) =
   let read_func = L.declare_function "read" read_t the_module in
   let readbyte_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type i8_t; i32_t |] in
   let readbyte_func = L.declare_function "read" readbyte_t the_module in
+  let creat_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t;i32_t |] in
+  let creat_func = L.declare_function "creat" creat_t the_module in
+  let write_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type i8_t; i32_t |] in
+  let write_func = L.declare_function "write" write_t the_module in
   let close_t = L.var_arg_function_type i32_t [| i32_t |] in
   let close_func = L.declare_function "close" close_t the_module in
   (* Define each function (arguments and return type) so we can call it *)
@@ -104,6 +108,12 @@ let translate (globals, functions) =
         | _ -> [] in
       try match (StringMap.find n local_vars) with (_,t) -> get_dims t
       with | Not_found ->  match (StringMap.find n global_vars) with (_,t) -> get_dims t in
+    let lookup_matrix_type n =
+      let get_type t = match t with 
+          A.Matrix (typ,_) -> typ
+        | _ -> raise (Failure ("Error lookup on matrix type. Type is not matrix " ^ (A.string_of_typ t))) in
+      try match (StringMap.find n local_vars) with (_,typ) -> get_type typ
+      with | Not_found ->  match (StringMap.find n global_vars) with (_,typ) -> get_type typ in
     (* Construct code for an expression; return its value *)
     let rec expr builder =
       function
@@ -123,9 +133,21 @@ let translate (globals, functions) =
                           (L.const_int i32_t 0) in
           L.build_load (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) "tmp" builder
       | A.Binop (e1, op, e2) ->
-          let e1' = expr builder e1
-          and e2' = expr builder e2
-          and etype = L.classify_type (L.type_of (expr builder e1))
+          let e1' = expr builder e1 in
+          let e2' = (print_int (L.integer_bitwidth (L.type_of e1')));expr builder e2 in
+          let e1f = match  L.integer_bitwidth (L.type_of e1') with
+            | 32 -> (
+              match  L.integer_bitwidth (L.type_of e2') with
+                | 8 -> L.const_trunc e1' i8_t
+                | _ -> e1') 
+            | _ -> e1' in
+          let e2f = match  L.integer_bitwidth (L.type_of e2') with
+            | 32 -> (
+              match  L.integer_bitwidth (L.type_of e1') with
+                | 8 -> L.const_trunc e2' i8_t
+                | _ -> e2') 
+            | _ -> e2' in 
+          let etype = L.classify_type (L.type_of (expr builder e1))
           in
             (match etype with
              | L.TypeKind.Double ->
@@ -141,7 +163,7 @@ let translate (globals, functions) =
                   | A.Less -> L.build_fcmp L.Fcmp.Olt
                   | A.Leq -> L.build_fcmp L.Fcmp.Ole
                   | A.Greater -> L.build_fcmp L.Fcmp.Ogt
-                  | A.Geq -> L.build_fcmp L.Fcmp.Oge) e1' e2' "tmp" builder
+                  | A.Geq -> L.build_fcmp L.Fcmp.Oge) e1f e2f "tmp" builder
              | _ ->
                  (match op with
                   | A.Add -> L.build_add
@@ -155,7 +177,7 @@ let translate (globals, functions) =
                   | A.Less -> L.build_icmp L.Icmp.Slt
                   | A.Leq -> L.build_icmp L.Icmp.Sle
                   | A.Greater -> L.build_icmp L.Icmp.Sgt
-                  | A.Geq -> L.build_icmp L.Icmp.Sge) e1' e2' "tmp" builder)
+                  | A.Geq -> L.build_icmp L.Icmp.Sge) e1f e2f "tmp" builder)
       | A.Unop (op, e) ->
           let e' = expr builder e
           in
@@ -199,12 +221,33 @@ let translate (globals, functions) =
                 let ev = expr builder e and
                  ev2 = A.string_of_expr e2 in
                 let arrptr = (lookup ev2) in
+                let arrtype = (lookup_matrix_type ev2) in
                 let arrsize = (List.fold_left (fun acc el -> acc*el) 1 (lookup_dims ev2))  in 
                 let fd = (L.build_call open_func [| ev ; L.const_int i32_t 0|] "open" builder) in
-                let ret = (L.build_call readbyte_func 
+                let ret = (match arrtype with
+                          A.Byte -> (L.build_call readbyte_func 
                                               [| fd ;
                                                 (L.build_gep arrptr [|L.const_int i32_t 0;L.const_int i32_t 0|] "tmp" builder);
-                                                 L.const_int i32_t (arrsize*4)|] "read" builder)  in
+                                                 L.const_int i32_t (arrsize)|] "read" builder) 
+                          | A.Int -> (L.build_call read_func 
+                                              [| fd ;
+                                                (L.build_gep arrptr [|L.const_int i32_t 0;L.const_int i32_t 0|] "tmp" builder);
+                                                 L.const_int i32_t (arrsize*4)|] "read" builder) 
+                          | _ -> raise (Failure ("Unable to read into matrix type " ^ (A.string_of_typ arrtype)))                       
+                ) in
+                (ignore (L.build_call close_func [| fd |] "close" builder));ret
+      | A.Call ("write", ([e; e2])) ->
+                let path = expr builder e and
+                var_name =  A.string_of_expr e2 in
+                let arrptr = (lookup var_name) in
+                let arrtype = (lookup_matrix_type var_name) in
+                let arrsize = (List.fold_left (fun acc el -> acc*el) 1 (lookup_dims var_name)) in
+                let fd = (L.build_call creat_func [| path ; L.const_int i32_t 438|] "creat" builder) in
+                let ret = L.build_call write_func 
+                                              [| fd ;
+                                                (L.build_gep arrptr [|L.const_int i32_t 0;L.const_int i32_t 0|] "tmp" builder);
+                                                 L.const_int i32_t (arrsize)|] "write" builder 
+                in
                 (ignore (L.build_call close_func [| fd |] "close" builder));ret
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in

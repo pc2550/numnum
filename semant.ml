@@ -23,11 +23,21 @@ let check (globals, functions) =
   (* Raise an exception of the given rvalue type cannot be assigned to
      the given lvalue type *)
   let check_assign lvaluet rvaluet err =
-    match rvaluet with
-        Matrix (t,_) -> if (lvaluet) == (t)
-                         then lvaluet else lvaluet(*raise err*)
-      | _ -> if lvaluet == rvaluet then lvaluet else raise err
+    let resolvedlval = match lvaluet with
+        | Matrix (t,_) -> (match t with
+            | Byte -> Int
+            | _ -> t )
+        | Byte -> Int
+        | _ -> lvaluet in
+    let resolvedrval = match rvaluet with
+        | Matrix (t,_) -> (match t with
+            | Byte -> Int
+            | _ -> t )
+        | Byte -> Int
+        | _ -> rvaluet in
+    if resolvedlval == resolvedrval then resolvedlval else raise err
   in
+
     (**** Checking Global Variables ****)
     (**** Checking Functions ****)
     (List.iter (check_not_void (fun n -> "illegal void global " ^ n)) globals;
@@ -76,6 +86,14 @@ let check (globals, functions) =
            locals = [];
            body = [];
          }
+         (StringMap.add "write"
+         {
+           typ = Int;
+           fname = "write";
+           formals = [(String,"w"); ((Matrix( Byte , [])), "x") ];
+           locals = [];
+           body = [];
+         }
          (StringMap.add "printbyte"
          {
            typ = Void;
@@ -106,7 +124,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  }))))))) in
+                  })))))))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -170,6 +188,8 @@ let check (globals, functions) =
                  | Add | Sub | Mult | Div when (t1 = Int) && (t2 = Int) -> Int
                  | Add | Sub | Mult | Div when (t1 = Float) && (t2 = Float) -> Float
                  | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Byte) -> Byte
+                 | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Int) -> Byte
+                 | Add | Sub | Mult | Div when (t1 = Int) && (t2 = Byte) -> Byte
                  | Equal | Neq when t1 = t2 -> Bool
                  | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Int) -> Bool
                  | And | Or when (t1 = Bool) && (t2 = Bool) -> Bool
