@@ -7,7 +7,7 @@ type uop = Neg | Not
 
 
 type typ = Int | Bool | Void 
-        | Float | String 
+        | Float | String | Byte
         | Matrix of typ * int list
 
 type bind = typ * string 
@@ -109,6 +109,7 @@ let rec string_of_typ = function
   | Void -> "void"
   | Float -> "float"
   | String -> "string"
+  | Byte -> "byte"
   | Matrix(t, l) -> (string_of_typ t) ^ (List.fold_left (fun acc el -> acc ^ "[" ^ (string_of_int el) ^ "]" ) "" l)
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
