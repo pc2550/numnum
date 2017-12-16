@@ -73,6 +73,9 @@ let check (globals, functions) =
            typ = Int;
            fname = "read";
            formals = [(String,"w"); ((Matrix( Int , [])), "x") ];
+           locals = [];
+           body = [];
+         }
          (StringMap.add "printbyte"
          {
            typ = Void;
@@ -269,7 +272,7 @@ let check (globals, functions) =
                                 ((string_of_typ func.typ) ^
                                    (" in " ^ (string_of_expr e)))))))
           | If (p, b1, b2) -> (check_bool_expr p; stmt b1; stmt b2)
-          | Elif (exprs, stmts) -> () 
+          | Elif (_, _) -> () 
           | For (e1, e2, e3, st) ->
               (ignore (expr e1);
                check_bool_expr e2;
