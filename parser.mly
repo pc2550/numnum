@@ -7,8 +7,8 @@ open Ast
 %token SEMI LPAREN RPAREN LBRACE RBRACE COMMA
 %token PLUS MINUS TIMES DIVIDE ASSIGN NOT
 %token EQ NEQ LT LEQ GT GEQ TRUE FALSE AND OR
-%token RETURN IF ELSE FOR WHILE INT BOOL VOID
-%token RBRACK LBRACK ELIF BREAK FLOAT STRING
+%token RETURN IF ELSE FOR WHILE INT BOOL VOID 
+%token RBRACK LBRACK ELIF BREAK FLOAT STRING BYTE
 %token SHAPE DIMS FUNC
 %token <int> LITERAL
 %token <float> FLITERAL
@@ -65,6 +65,7 @@ typ:
   | VOID { Void }
   | FLOAT { Float }
   | STRING { String }
+  | BYTE   { Byte }
   | typ matrix_params  %prec NOLBRACK { Matrix($1, List.rev $2) }
 
 matrix_params:

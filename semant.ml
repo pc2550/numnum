@@ -59,6 +59,14 @@ let check (globals, functions) =
            locals = [];
            body = [];
          }
+         (StringMap.add "printbyte"
+         {
+           typ = Void;
+           fname = "printbyte";
+           formals = [ (Byte, "x") ];
+           locals = [];
+           body = [];
+         }
          (StringMap.add "printb"
             {
               typ = Void;
@@ -82,7 +90,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  })))) in
+                  }))))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -139,6 +147,7 @@ let check (globals, functions) =
                 (match op with
                  | Add | Sub | Mult | Div when (t1 = Int) && (t2 = Int) -> Int
                  | Add | Sub | Mult | Div when (t1 = Float) && (t2 = Float) -> Float
+                 | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Byte) -> Byte
                  | Equal | Neq when t1 = t2 -> Bool
                  | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Int) -> Bool
                  | And | Or when (t1 = Bool) && (t2 = Bool) -> Bool

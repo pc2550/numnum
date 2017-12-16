@@ -35,6 +35,7 @@ let translate (globals, functions) =
     | A.Void -> void_t
     | A.String -> string_t
     | A.Float -> float_t
+    | A.Byte -> i8_t
     | A.Matrix (t, dims) -> array_t (ltype_of_typ t) dims in 
   (* Declare each global variable; remember its value in a map *)
   let global_vars =
@@ -62,6 +63,7 @@ let translate (globals, functions) =
     let (the_function, _) = StringMap.find fdecl.A.fname function_decls in
     let builder = L.builder_at_end context (L.entry_block the_function) in
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
+    let byte_format_str = L.build_global_stringptr "%x\n" "fmt" builder in
     let float_format_str = L.build_global_stringptr "%f\n" "fmt" builder in
     let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
     (* Construct the function's "locals": formal arguments and locally
@@ -169,11 +171,14 @@ let translate (globals, functions) =
       | A.Call ("printstr", ([ e ])) ->
           L.build_call printf_func [| string_format_str; expr builder e |]
             "printf" builder
+      | A.Call ("printbyte", ([ e ])) ->
+          L.build_call printf_func [| byte_format_str; expr builder e |]
+            "printf" builder
       | A.Call ("dim", ([ e ])) ->
-              match e with | A.Id(t) -> 
+              (match e with | A.Id(t) -> 
                   let d= L.build_alloca  i32_t "tmp" builder in
                   (ignore(L.build_store (L.const_int i32_t (List.length
-                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder)
+                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder))
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (expr builder) (List.rev act)) in
