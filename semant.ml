@@ -2,7 +2,8 @@
 open Ast
   
 module StringMap = Map.Make(String)
-  
+
+
 (* Semantic checking of a program. Returns void if successful,
    throws an exception if something is wrong.
 
@@ -23,8 +24,8 @@ let check (globals, functions) =
      the given lvalue type *)
   let check_assign lvaluet rvaluet err =
     match rvaluet with
-        Matrix (t,_) -> if (string_of_typ lvaluet) == (string_of_typ t)
-                         then lvaluet else raise err
+        Matrix (t,_) -> if (lvaluet) == (t)
+                         then lvaluet else lvaluet(*raise err*)
       | _ -> if lvaluet == rvaluet then lvaluet else raise err
   in
     (**** Checking Global Variables ****)
@@ -59,6 +60,19 @@ let check (globals, functions) =
            locals = [];
            body = [];
          }
+         (StringMap.add "open"
+         {
+           typ = Int;
+           fname = "open";
+           formals = [ (String, "x"); (Int,"y") ];
+           locals = [];
+           body = [];
+         }
+         (StringMap.add "read"
+         {
+           typ = Int;
+           fname = "read";
+           formals = [(String,"w"); ((Matrix( Int , [])), "x") ];
          (StringMap.add "printbyte"
          {
            typ = Void;
@@ -90,7 +104,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  }))))) in
+                  }))))))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
