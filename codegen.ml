@@ -108,10 +108,10 @@ let translate (globals, functions) =
         | _ -> [] in
       try match (StringMap.find n local_vars) with (_,t) -> get_dims t
       with | Not_found ->  match (StringMap.find n global_vars) with (_,t) -> get_dims t in
-    let lookup_matrix_type n =
+    let lookup_type n =
       let get_type t = match t with 
           A.Matrix (typ,_) -> typ
-        | _ -> raise (Failure ("Error lookup on matrix type. Type is not matrix " ^ (A.string_of_typ t))) in
+        | _ -> t in
       try match (StringMap.find n local_vars) with (_,typ) -> get_type typ
       with | Not_found ->  match (StringMap.find n global_vars) with (_,typ) -> get_type typ in
     (* Construct code for an expression; return its value *)
@@ -134,7 +134,7 @@ let translate (globals, functions) =
           L.build_load (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) "tmp" builder
       | A.Binop (e1, op, e2) ->
           let e1' = expr builder e1 in
-          let e2' = (print_int (L.integer_bitwidth (L.type_of e1')));expr builder e2 in
+          let e2' = expr builder e2 in (*(print_int (L.integer_bitwidth (L.type_of e1')));*)
           let e1f = match  L.integer_bitwidth (L.type_of e1') with
             | 32 -> (
               match  L.integer_bitwidth (L.type_of e2') with
@@ -184,10 +184,22 @@ let translate (globals, functions) =
             (match op with | A.Neg -> L.build_neg | A.Not -> L.build_not) e'
               "tmp" builder
       | A.Assign (s, e) ->
-          let e' = expr builder e
-          in (ignore (L.build_store e' (lookup s) builder); e')
+          let e' = expr builder e in
+          let s' = (lookup s) in
+          (match (lookup_type s) with
+            | A.Byte -> (match (L.integer_bitwidth (L.type_of e')) with
+                | 8 -> (ignore (L.build_store e' s' builder)); e'
+                | _ -> (let trunc = L.const_trunc e' i8_t in
+                         (ignore (L.build_store trunc s' builder)); trunc) )
+            | _ -> (ignore (L.build_store e' s' builder)); e')
       | A.MatrixAssign (s,dims_assign,e) -> 
           let e' = expr builder e in
+          let s' = (lookup s) in 
+          let ef = (match (lookup_type s) with
+            | A.Byte -> (match (L.integer_bitwidth (L.type_of e')) with
+                | 8 -> e'
+                | _ -> ( L.const_trunc e' i8_t ) )
+            | _ ->  e') in
           let dims = lookup_dims s in
           let acc_params = List.map (fun el -> (expr builder el)) dims_assign in
           let get_pos = List.fold_right2 
@@ -195,7 +207,7 @@ let translate (globals, functions) =
                           acc_params 
                           dims 
                           (L.const_int i32_t 0) in
-          L.build_store  e' (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder
+          L.build_store  ef (L.build_gep s' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder
       | A.Call ("print", ([ e ])) | A.Call ("printb", ([ e ])) ->
           L.build_call printf_func [| int_format_str; expr builder e |]
             "printf" builder
@@ -221,7 +233,7 @@ let translate (globals, functions) =
                 let ev = expr builder e and
                  ev2 = A.string_of_expr e2 in
                 let arrptr = (lookup ev2) in
-                let arrtype = (lookup_matrix_type ev2) in
+                let arrtype = (lookup_type ev2) in
                 let arrsize = (List.fold_left (fun acc el -> acc*el) 1 (lookup_dims ev2))  in 
                 let fd = (L.build_call open_func [| ev ; L.const_int i32_t 0|] "open" builder) in
                 let ret = (match arrtype with
@@ -240,7 +252,6 @@ let translate (globals, functions) =
                 let path = expr builder e and
                 var_name =  A.string_of_expr e2 in
                 let arrptr = (lookup var_name) in
-                let arrtype = (lookup_matrix_type var_name) in
                 let arrsize = (List.fold_left (fun acc el -> acc*el) 1 (lookup_dims var_name)) in
                 let fd = (L.build_call creat_func [| path ; L.const_int i32_t 438|] "creat" builder) in
                 let ret = L.build_call write_func 

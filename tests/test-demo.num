@@ -4,13 +4,13 @@ int main()
   string path2;
   int i;
   int j;
-  byte[600][400][3] a;
+  byte[3][600][400] a;
   path = "./cat-stripped.ppm";
   path2 = "./cat-check.ppm";
   read(path, a);
   for (i = 0 ; i < 400 ; i = i + 1) {
     for (j = 0; j < 600 ; j = j + 1 ) {
-      a[j][i][1] = 0;
+      a[0][j][i] = 0;
     }
   }
   write(path2, a);
