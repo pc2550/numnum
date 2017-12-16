@@ -185,14 +185,15 @@ let translate (globals, functions) =
           L.build_call printf_func [| byte_format_str; expr builder e |]
             "printf" builder
       | A.Call ("dim", ([ e ])) ->
-              (match e with | A.Id(t) -> 
+              ( match e with 
+                | A.Id(t) -> 
                   let d= L.build_alloca  i32_t "tmp" builder in
                   (ignore(L.build_store (L.const_int i32_t (List.length
-                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder))
+                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder)
+               | _ -> expr builder e)
       | A.Call ("open", ([ e ; e2 ])) ->
               (L.build_call open_func [| expr builder e;expr builder e2|] "open" builder)
       | A.Call ("read", ([ e ; e2 ])) ->
-                let d = L.build_alloca  i32_t "tmp" builder in
                 let ev = expr builder e and
                  ev2 = A.string_of_expr e2 in
                 let arrptr = (lookup ev2) in
