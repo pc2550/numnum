@@ -37,6 +37,7 @@ rule token = parse
 | "int"    { INT }
 | "bool"   { BOOL }
 | "void"   { VOID }
+| "byte"   { BYTE } (*numnum*)
 | "float"  { FLOAT } (*numnum*)
 | "string" { STRING } (*numnum*)
 | "true"   { TRUE }
