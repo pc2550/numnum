@@ -5,8 +5,10 @@ int cond(bool b)
     x = 42;
   elif (b)
     x = 95;
-  elif (b)
+  elif (b) {
+    /* because the previous elif expression was true, this elif should be skipped over */
     x = 423;
+  }
   return x;
 }
 
