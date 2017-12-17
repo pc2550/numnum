@@ -3,18 +3,17 @@ int cond(bool b)
   int x;
   if (false)
     x = 42;
-  elif (b)
+  else if (b) /* because this is an if statement whose condition evaluates to true, the below elif statement is skipped */
     x = 95;
   elif (b)
-    x = 423; /* when there is no else statement, numnum elif is buggy, meaning that the last elif is run */
+    x = 423;
+  else
+    x = 500;
   return x;
 }
 
 int main()
 {
- int x;
- x = 1;
- print(x);
  print(cond(true));
  print(cond(false));
  return 0;
