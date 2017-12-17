@@ -13,7 +13,8 @@ LLI="lli"
 # Try "_build/numnum.native" if ocamlbuild was unable to create a symbolic link.
 NUMNUM="./numnum.native"
 #NUMNUM="_build/numnum.native"
-
+CLANG="clang"
+LLC="llc"
 # Set time limit for all operations
 ulimit -t 30
 
@@ -28,6 +29,7 @@ Usage() {
     echo "Usage: testall.sh [options] [.num files]"
     echo "-k    Keep intermediate files"
     echo "-h    Print this help"
+	echo "-o    Run old tests"
     exit 1
 }
 
@@ -87,6 +89,7 @@ Check() {
 
     generatedfiles="$generatedfiles ${basename}.ll ${basename}.out" &&
     Run "$NUMNUM" "<" $1 ">" "${basename}.ll" &&
+    Run "$LLC" "${basename}.ll"
     Run "$LLI" "${basename}.ll" ">" "${basename}.out" &&
     Compare ${basename}.out ${reffile}.out ${basename}.diff
 
@@ -136,15 +139,18 @@ CheckFail() {
     fi
 }
 
-while getopts kdpsh c; do
+while getopts kdpsho c; do
     case $c in
+	o) # Run old tests
+		old=1
+		;;
 	k) # Keep intermediate files
 	    keep=1
 	    ;;
 	h) # Help
 	    Usage
 	    ;;
-    esac
+	esac
 done
 
 shift `expr $OPTIND - 1`
@@ -162,7 +168,11 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-*.num tests/fail-*.num"
+	if [ ! -z $old ]; then
+		files="tests/test-*.num tests/fail-*.num old_tests/test-*.num old_tests/fail-*.num"
+	else
+		files="tests/test-*.num tests/fail-*.num"
+	fi
 fi
 
 for file in $files
