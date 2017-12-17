@@ -210,7 +210,9 @@ let check (globals, functions) =
                                 ((string_of_typ func.typ) ^
                                    (" in " ^ (string_of_expr e)))))))
           | If (p, b1, b2) -> (check_bool_expr p; stmt b1; stmt b2)
-          | Elif (exprs, stmts) -> () 
+          | Elif (exprs, stmts) -> 
+              (List.iter check_bool_expr exprs;
+               List.iter stmt stmts) 
           | For (e1, e2, e3, st) ->
               (ignore (expr e1);
                check_bool_expr e2;
