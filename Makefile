@@ -16,7 +16,7 @@ numnum.native :
 clean :
 	ocamlbuild -clean
 	rm -rf testall.log *.diff numnum scanner.ml parser.ml parser.mli
-	rm -rf *.cmx *.cmi *.cmo *.cmx *.o
+	rm -rf *.cmx *.cmi *.cmo *.cmx *.o *.s
 
 # More detailed: build using ocamlc/ocamlopt + ocamlfind to locate LLVM
 

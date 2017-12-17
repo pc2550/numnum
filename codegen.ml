@@ -114,6 +114,25 @@ let translate (globals, functions) =
         | _ -> t in
       try match (StringMap.find n local_vars) with (_,typ) -> get_type typ
       with | Not_found ->  match (StringMap.find n global_vars) with (_,typ) -> get_type typ in
+    let integer_conv_op lh rh builder =
+        let rhw =  (L.integer_bitwidth (L.type_of rh)) in
+        let lhw =  (L.integer_bitwidth (L.type_of lh)) in
+        ( match lhw with
+            | 8 ->  (
+              match  rhw with
+                | 32 -> (L.build_intcast rh i8_t "conv" builder)
+                | 64 ->  (L.build_uitofp rh i8_t "conv" builder)
+                | _ -> rh )
+            | 32 -> (
+              match  rhw with
+                | 8 -> (L.build_intcast rh i32_t "conv" builder)
+                | 64 ->  (L.build_fptosi rh i32_t "conv" builder)
+                | _ -> rh )
+            | 64 ->  (
+              match  rhw with
+                | 64 -> rh
+                | _ ->  ( L.build_sitofp rh float_t "conv" builder) )
+            | _ -> rh  ) in 
     let integer_conversion lh rh builder = 
         let rht = (L.type_of rh) in
         let rhw =  (L.integer_bitwidth rht) in
@@ -152,18 +171,12 @@ let translate (globals, functions) =
       | A.Binop (e1, op, e2) ->
           let e1' = expr builder e1 in
           let e2' = expr builder e2 in (*(print_int (L.integer_bitwidth (L.type_of e1')));*)
-          let e1f = match  L.integer_bitwidth (L.type_of e1') with
+          let e2f = (integer_conv_op e1' e2' builder) (*match  L.integer_bitwidth (L.type_of e1') with 
             | 32 -> (
               match  L.integer_bitwidth (L.type_of e2') with
                 | 8 -> L.const_trunc e1' i8_t
                 | _ -> e1') 
-            | _ -> e1' in
-          let e2f = match  L.integer_bitwidth (L.type_of e2') with
-            | 32 -> (
-              match  L.integer_bitwidth (L.type_of e1') with
-                | 8 -> L.const_trunc e2' i8_t
-                | _ -> e2') 
-            | _ -> e2' in 
+            | _ -> e1' *)in
           let etype = L.classify_type (L.type_of (expr builder e1))
           in
             (match etype with
@@ -180,7 +193,7 @@ let translate (globals, functions) =
                   | A.Less -> L.build_fcmp L.Fcmp.Olt
                   | A.Leq -> L.build_fcmp L.Fcmp.Ole
                   | A.Greater -> L.build_fcmp L.Fcmp.Ogt
-                  | A.Geq -> L.build_fcmp L.Fcmp.Oge) e1f e2f "tmp" builder
+                  | A.Geq -> L.build_fcmp L.Fcmp.Oge) e1' e2f "tmp" builder
              | _ ->
                  (match op with
                   | A.Add -> L.build_add
@@ -194,7 +207,7 @@ let translate (globals, functions) =
                   | A.Less -> L.build_icmp L.Icmp.Slt
                   | A.Leq -> L.build_icmp L.Icmp.Sle
                   | A.Greater -> L.build_icmp L.Icmp.Sgt
-                  | A.Geq -> L.build_icmp L.Icmp.Sge) e1f e2f "tmp" builder)
+                  | A.Geq -> L.build_icmp L.Icmp.Sge) e1' e2f "tmp" builder)
       | A.Unop (op, e) ->
           let e' = expr builder e
           in
