@@ -22,20 +22,17 @@ let check (globals, functions) =
     function | (Void, n) -> raise (Failure (exceptf n)) | _ -> () in
   (* Raise an exception of the given rvalue type cannot be assigned to
      the given lvalue type *)
+  let is_int_type a = (match a with
+    | Int|Byte|Float -> true
+    | Matrix (t,_) -> (match t with
+        Int|Byte|Float -> true
+        | _ -> false )
+    | _ -> false
+  ) in
   let check_assign lvaluet rvaluet err =
-    let resolvedlval = match lvaluet with
-        | Matrix (t,_) -> (match t with
-            | Byte -> Int
-            | _ -> t )
-        | Byte -> Int
-        | _ -> lvaluet in
-    let resolvedrval = match rvaluet with
-        | Matrix (t,_) -> (match t with
-            | Byte -> Int
-            | _ -> t )
-        | Byte -> Int
-        | _ -> rvaluet in
-    if resolvedlval == resolvedrval then resolvedlval else raise err
+    if lvaluet == rvaluet then lvaluet 
+    else if (is_int_type lvaluet) &&  (is_int_type rvaluet) then lvaluet
+    else raise err
   in
 
     (**** Checking Global Variables ****)
@@ -188,8 +185,8 @@ let check (globals, functions) =
                  | Add | Sub | Mult | Div when (t1 = Int) && (t2 = Int) -> Int
                  | Add | Sub | Mult | Div when (t1 = Float) && (t2 = Float) -> Float
                  | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Byte) -> Byte
-                 | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Int) -> Byte
-                 | Add | Sub | Mult | Div when (t1 = Int) && (t2 = Byte) -> Byte
+                 | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Int) -> Int
+                 | Add | Sub | Mult | Div when (t1 = Int) && (t2 = Byte) -> Int
                  | Equal | Neq when t1 = t2 -> Bool
                  | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Int) -> Bool
                  | And | Or when (t1 = Bool) && (t2 = Bool) -> Bool
