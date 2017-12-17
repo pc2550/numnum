@@ -1,0 +1,19 @@
+int cond(bool b)
+{
+  int x;
+  if (false)
+    x = 42;
+  elif (b)
+    x = 95;
+  elif (b)
+    x = 423;
+  return x;
+}
+
+int main()
+{
+ int x;
+ x = 1;
+ print(cond(false));
+ return 0;
+}

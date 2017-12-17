@@ -330,8 +330,10 @@ let translate (globals, functions) =
       | A.Elif (exprs, stmts) ->
           (match exprs with 
             [] -> 
-              builder 
-          
+	      stmt builder
+		(A.Block
+		   [ A.Block [ (List.hd stmts)  ]])
+
           | _ ->
 	      let bool_val = expr builder (List.hd exprs) in
 	      let merge_bb = L.append_block context "merge" the_function in
