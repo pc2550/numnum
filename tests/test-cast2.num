@@ -1,0 +1,9 @@
+int main()
+{
+  byte a;
+  float c;
+  a = 5;
+  c = a;
+  printfl(c);
+  return 0;
+}
