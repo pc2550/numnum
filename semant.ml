@@ -107,6 +107,14 @@ let check (globals, functions) =
               locals = [];
               body = [];
             }
+            (StringMap.add "printstrn"
+            {
+              typ = Void;
+              fname = "printstrn";
+              formals = [ (String, "x") ];
+              locals = [];
+              body = [];
+            }
             (StringMap.add "printfl"
                {                 typ = Void;
                  fname = "printfl";
@@ -121,7 +129,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  })))))))) in
+                  }))))))))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -190,7 +198,10 @@ let check (globals, functions) =
                  | Add | Sub | Mult | Div when (t1 = Float) && (t2 = Byte) -> Float
                  | Add | Sub | Mult | Div when (t1 = Float) && (t2 = Int) -> Float
                  | Equal | Neq when t1 = t2 -> Bool
+                 | Equal | Neq when (t1 = Int) && (t2 = Byte) -> Bool
                  | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Int) -> Bool
+                 | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Byte) -> Bool
+                 | Less | Leq | Greater | Geq when (t1 = Byte) && (t2 = Int) -> Bool
                  | And | Or when (t1 = Bool) && (t2 = Bool) -> Bool
                  | _ ->
                      raise

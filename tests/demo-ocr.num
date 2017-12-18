@@ -1,0 +1,39 @@
+int main()
+{
+  string path;
+  string path2;
+  int i;
+  int j;
+  float sum;
+  float[784][10] a;
+  float[10] out;
+  byte[784] b;
+  path = "./weights.bin";
+  path2 = "./7.bin";
+  read(path, a);
+  read(path2, b);
+  for (j = 0; j < 28 ; j = j + 1){
+    for (i = 0; i < 28 ; i = i + 1){
+       if (0 == b[28*j+i]){
+          printstrn(".");
+       }else{
+          printstrn("X");
+       }
+    }
+    printstr("");
+  }
+  for (j = 0; j < 10 ; j = j + 1 ) {
+    sum = 0;
+    for (i = 0 ; i < 784 ; i = i + 1) {
+      if (0 != b[i]){
+        sum = sum + a[i][j];
+      }
+    }
+    sum = sum/784;
+    out[j] = sum;
+    printfl(sum);
+  }
+
+
+  return 0;
+}
