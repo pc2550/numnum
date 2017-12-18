@@ -47,7 +47,19 @@ let check (globals, functions) =
        (List.map (fun fd -> fd.fname) functions);
      (* Function declaration for a named function *)
      let built_in_decls =
-       StringMap.add "dim"
+       StringMap.add "el_mul"
+         {
+           typ = Void;
+           fname = "el_mul";
+           (* The arguments to Matrix
+           don't matter, they are overridden in the checker below, but we need
+           them here for this to compile *)
+           formals = [(Matrix(Int, [1]), "x"); (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
+           locals = [];
+           body = [];
+         }
+ 
+        (StringMap.add "dim"
          {
            typ = Int;
            fname = "dim";
@@ -121,7 +133,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  })))))))) in
+                  }))))))))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -245,22 +257,52 @@ let check (globals, functions) =
                              | Matrix(_,_) -> ()
                              | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e))))
                          | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
-              else
+       	     else if (fname = "el_mul") then
+                let e = List.hd actuals in
+                (match(e) with
+                    | Id(m) -> (match (type_of_identifier m) with
+                        | Matrix(t, l) ->
+                            let comp_matrix e1 e2 =
+                            (match(e1, e2) with
+                                | Id(m1), Id(m2) -> (match (type_of_identifier m1, type_of_identifier m2) with
+                                    | Matrix(t1, l1), Matrix(t2, l2) -> 
+                                        let rec compareVs v1 v2 = match v1, v2 with
+                                            | [], [] -> true
+                                            | [], _
+                                            | _, [] -> false
+                                            | x::xs, y::ys -> x=y && compareVs xs ys
+                                        in
+                                        if (t1 != t2) then
+                                            raise(Failure ("incompatibles types of matrices to el_mul()"))
+                                        else if not (compareVs l1 l2) then
+                                            raise(Failure ("incompatibles dimensions of matrices to el_mul()"))
+                                        else
+                                            e2
+                                    | _, _ -> raise (Failure ("illegal argument to el_mul() found expected Matrix in " ^ (string_of_expr e))))
+                                | _, _ -> raise (Failure ("illegal argument to el_mul() found  expected Matrix in " ^ (string_of_expr e))))
+                                 (* checking to see if two matrices have same type and shape *)
+                            in
+                            ignore(List.fold_left comp_matrix e (List.tl actuals)); ()
+                        | _ -> raise (Failure ("illegal argument to el_mul() found  expected Matrix in " ^ (string_of_expr e))))
+                    | _ -> raise(Failure ("illegal argument to el_mul() found expected Matrix in "^ (string_of_expr e))) 
+                )
 
-                   List.iter2
-                     (fun (ft, _) e ->
-                        let et = expr e
-                        in
-                          ignore
-                            (check_assign ft et
-                               (Failure
-                                  ("illegal actual argument found " ^
-                                     ((string_of_typ et) ^
-                                        (" expected " ^
-                                           ((string_of_typ ft) ^
-                                              (" in " ^ (string_of_expr e)))))))))
-                     fd.formals actuals;
-                 fd.typ) in
+            else
+
+                  List.iter2
+                    (fun (ft, _) e ->
+                       let et = expr e
+                       in
+                         ignore
+                           (check_assign ft et
+                              (Failure
+                                 ("illegal actual argument found " ^
+                                    ((string_of_typ et) ^
+                                       (" expected " ^
+                                          ((string_of_typ ft) ^
+                                             (" in " ^ (string_of_expr e)))))))))
+                    fd.formals actuals;
+                fd.typ) in
         let check_bool_expr e =
           if ( != ) (expr e) Bool
           then
