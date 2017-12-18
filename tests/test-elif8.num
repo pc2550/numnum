@@ -1,0 +1,21 @@
+int cond(bool b)
+{
+  int x;
+  if (false)
+    x = 42;
+  elif (b)
+    x = 95;
+  elif (b) {
+    /* because the previous elif expression was true, this elif should be skipped over */
+    x = 423;
+  }
+  return x;
+}
+
+int main()
+{
+ int x;
+ x = 1;
+ print(cond(true));
+ return 0;
+}

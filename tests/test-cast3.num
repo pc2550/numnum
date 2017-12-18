@@ -1,0 +1,11 @@
+int main()
+{
+  byte a;
+  int c;
+  int d;
+  a = 5;
+  c = 4;
+  d = c + a;
+  print(d);
+  return 0;
+}

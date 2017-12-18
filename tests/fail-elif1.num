@@ -1,0 +1,18 @@
+int cond(bool b)
+{
+  int x;
+  if (13) /* Error: non-bool predicate */
+    x = 42;
+  elif (b)
+    x = 95;
+  elif (b)
+    x = 423;
+  return x;
+}
+
+int main()
+{
+ print(cond(true));
+ print(cond(false));
+ return 0;
+}

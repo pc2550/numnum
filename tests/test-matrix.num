@@ -1,0 +1,11 @@
+
+int main(){
+	int [10][2] b;
+	int [10][2] c;
+	byte a;
+	a = 2;
+	a = a + 3;
+	b[0][0] = 1;
+	printbyte(a);
+	return 0;
+}

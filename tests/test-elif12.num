@@ -1,0 +1,32 @@
+int cond(bool b)
+{
+  int x;
+  printstr("Inside cond, undefined: ");
+  print(x);
+  if (false)
+    x = 42;
+  elif (b)
+    x = 95;
+  elif (b)
+    x = 423;
+  printstr("After the elif, in cond, if b = true, should get 95: ");
+  print(x);
+  return x;
+}
+
+int main()
+{
+ int x;
+ x = 1;
+ printstr("In the main, expect 1: ");
+ print(x);
+ printstr("Calling cond(true), in cond, expect 95: ");
+ print(cond(true));
+ printstr("After calling cond(true), in main: ");
+ print(x);
+ printstr("Calling cond(false): ");
+ print(cond(false));
+ printstr("After calling cond(false), in main: ");
+ print(x);
+ return 0;
+}

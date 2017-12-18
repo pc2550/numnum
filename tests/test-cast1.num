@@ -1,0 +1,12 @@
+int main()
+{
+  byte a;
+  byte c;
+  int b;
+  b = 3;
+  a = b;
+  c = 5;
+  printbyte(a);
+  printbyte(c);
+  return 0;
+}

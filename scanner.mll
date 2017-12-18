@@ -9,8 +9,8 @@ rule token = parse
 | ')'      { RPAREN }
 | '{'      { LBRACE }
 | '}'      { RBRACE }
-| '['	   { RBRACK } (*numnum*)
-| ']'	   { LBRACK } (*numnum*)
+| ']'	   { RBRACK } (*numnum*)
+| '['	   { LBRACK } (*numnum*)
 | ';'      { SEMI } 
 | ','      { COMMA } 
 | '+'      { PLUS }
@@ -38,6 +38,7 @@ rule token = parse
 | "int"    { INT }
 | "bool"   { BOOL }
 | "void"   { VOID }
+| "byte"   { BYTE } (*numnum*)
 | "float"  { FLOAT } (*numnum*)
 | "string" { STRING } (*numnum*)
 | "true"   { TRUE }

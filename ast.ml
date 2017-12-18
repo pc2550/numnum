@@ -5,9 +5,11 @@ type op = Add | Sub | Mult | Div | Equal | Neq | Less | Leq | Greater | Geq |
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Void | Float | String
+type typ = Int | Bool | Void 
+        | Float | String | Byte
+        | Matrix of typ * int list
 
-type bind = typ * string
+type bind = typ * string 
 
 type expr =
     Literal of int
@@ -19,6 +21,8 @@ type expr =
   | Unop of uop * expr
   | Assign of string * expr
   | Call of string * expr list
+  | MatrixAccess of string * expr list
+  | MatrixAssign of string * expr list * expr
   | Noexpr
 
 type stmt =
@@ -26,6 +30,7 @@ type stmt =
   | Expr of expr
   | Return of expr
   | If of expr * stmt * stmt
+  | Elif of expr list * stmt list
   | For of expr * expr * expr * stmt
   | While of expr * stmt
   | Break
@@ -38,6 +43,8 @@ type func_decl = {
     locals : bind list;
     body : stmt list;
   }
+
+
 
 type program = bind list * func_decl list
 
@@ -68,6 +75,9 @@ let rec string_of_expr = function
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s
+  | MatrixAccess (t,dims) -> t ^ (List.fold_left (fun acc el -> "[" ^ (string_of_expr el) ^ "]" ^ acc) "" dims)
+  | MatrixAssign (t,dims,e) -> let r = string_of_expr e in
+      t ^ (List.fold_left (fun acc el -> "[" ^ (string_of_expr el) ^ "]" ^ acc )"" dims) ^ " = " ^ r
   | Binop(e1, o, e2) -> 
         let l = string_of_expr e1 and r = string_of_expr e2 in
             (l ^ " " ^ string_of_op o ^ " " ^ r)
@@ -85,6 +95,10 @@ let rec string_of_stmt = function
   | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
   | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
       string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
+  | Elif(exprs, stmts) ->  "if (" ^ string_of_expr (List.hd exprs) ^ ")\n" ^
+      string_of_stmt (List.hd stmts)
+      ^ String.concat "" (List.map2 (fun e s -> "elif (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s) (List.tl exprs) (List.tl (List.rev (List.tl (List.rev stmts))))) 
+      ^ "else\n" ^ string_of_stmt (List.hd (List.rev stmts))
   | For(e1, e2, e3, s) ->
       "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
       string_of_expr e3  ^ ") " ^ string_of_stmt s
@@ -92,12 +106,14 @@ let rec string_of_stmt = function
   | Break -> "break"
   | Continue -> "continue"
 
-let string_of_typ = function
+let rec string_of_typ = function
     Int -> "int"
   | Bool -> "bool"
   | Void -> "void"
   | Float -> "float"
   | String -> "string"
+  | Byte -> "byte"
+  | Matrix(t, l) -> (string_of_typ t) ^ (List.fold_left (fun acc el -> acc ^ "[" ^ (string_of_int el) ^ "]" ) "" l)
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 

@@ -1,0 +1,15 @@
+
+int main()
+{
+  string path;
+  int[10] a; 
+  int flags;
+  int fd;
+  int ret;
+  path = "./tests/3nums";
+  ret = read(path,a);
+  print(a[0]);
+  print(a[1]);
+  print(a[2]);
+  return 0;
+}
