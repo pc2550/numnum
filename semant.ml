@@ -187,6 +187,8 @@ let check (globals, functions) =
                  | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Byte) -> Byte
                  | Add | Sub | Mult | Div when (t1 = Byte) && (t2 = Int) -> Int
                  | Add | Sub | Mult | Div when (t1 = Int) && (t2 = Byte) -> Int
+                 | Add | Sub | Mult | Div when (t1 = Float) && (t2 = Byte) -> Float
+                 | Add | Sub | Mult | Div when (t1 = Float) && (t2 = Int) -> Float
                  | Equal | Neq when t1 = t2 -> Bool
                  | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Int) -> Bool
                  | And | Or when (t1 = Bool) && (t2 = Bool) -> Bool

@@ -181,6 +181,9 @@ do
 	*test-*)
 	    Check $file 2>> $globallog
 	    ;;
+    *demo-*)
+        Check $file 2>> $globallog
+        ;;
 	*fail-*)
 	    CheckFail $file 2>> $globallog
 	    ;;
