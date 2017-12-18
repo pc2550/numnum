@@ -1,0 +1,70 @@
+int main()
+{
+  string path;
+  string path2;
+  int i;
+  int j;
+  int sum;
+  byte[3][434][400] a;
+  byte[3][434][400] b; 
+  path = "./burger-stripped.ppm";
+  path2 = "./burger-check-edge.ppm";
+  read(path, a);
+  for (i = 1 ; i < 400 ; i = i + 1) {
+    for (j = 1; j < 434 ; j = j + 1 ) {
+      sum = 0;
+      sum = sum + -1 * a[0][j-1][i+1];
+      sum = sum + -1 * a[0][j-1][i-1];
+      sum = sum + -1 * a[0][j+1][i+1];
+      sum = sum + -1 * a[0][j+1][i-1];
+      sum = sum + -1 * a[0][j-1][i];
+      sum = sum + -1 * a[0][j+1][i];
+      sum = sum + -1 * a[0][j][i+1];
+      sum = sum + -1 * a[0][j][i-1];
+      sum = sum +  8 * a[0][j][i];
+      if (255 < sum){
+        sum = 255;
+      }
+      if (0 > sum){
+        sum = 0;
+      }
+      b[0][j][i] = sum;
+      sum = 0;
+      sum = sum + -1 * a[1][j-1][i+1];
+      sum = sum + -1 * a[1][j-1][i-1];
+      sum = sum + -1 * a[1][j+1][i+1];
+      sum = sum + -1 * a[1][j+1][i-1];
+      sum = sum + -1 * a[1][j-1][i];
+      sum = sum + -1 * a[1][j+1][i];
+      sum = sum + -1 * a[1][j][i+1];
+      sum = sum + -1 * a[1][j][i-1];
+      sum = sum +  8 * a[1][j][i];
+      if (255 < sum){
+        sum = 255;
+      }
+      if (0 > sum){
+        sum = 0;
+      }
+      b[1][j][i] = sum;
+      sum = 0;
+      sum = sum + -1 * a[2][j-1][i+1];
+      sum = sum + -1 * a[2][j-1][i-1];
+      sum = sum + -1 * a[2][j+1][i+1];
+      sum = sum + -1 * a[2][j+1][i-1];
+      sum = sum + -1 * a[2][j-1][i];
+      sum = sum + -1 * a[2][j+1][i];
+      sum = sum + -1 * a[2][j][i+1];
+      sum = sum + -1 * a[2][j][i-1];
+      sum = sum +  8 * a[2][j][i];
+      if (255 < sum){
+        sum = 255;
+      }
+      if (0 > sum){
+        sum = 0;
+      }
+      b[2][j][i] = sum;
+    }
+  }
+  write(path2, b);
+  return 0;
+}
