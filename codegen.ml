@@ -313,10 +313,14 @@ let translate (globals, functions) =
               | A.Void -> L.build_ret_void builder
               | _ -> L.build_ret (expr builder e) builder);
            builder)
-      | A.Break ->
-          builder
-      | A.Continue ->
-          builder
+      | A.Break s ->
+	  stmt builder
+	    (A.Block
+	       [ A.Block [s]])
+      | A.Continue s ->
+	  stmt builder
+	    (A.Block
+	       [ A.Block [s]])
       | A.If (predicate, then_stmt, else_stmt) ->
           let bool_val = expr builder predicate in
           let merge_bb = L.append_block context "merge" the_function in

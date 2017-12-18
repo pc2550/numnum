@@ -293,8 +293,8 @@ let check (globals, functions) =
                              (" expected " ^
                                 ((string_of_typ func.typ) ^
                                    (" in " ^ (string_of_expr e)))))))
-          | Break -> ()
-          | Continue -> ()
+          | Break s -> ()
+          | Continue s -> ()
           | If (p, b1, b2) -> (check_bool_expr p; stmt b1; stmt b2)
           | Elif (exprs, stmts) -> 
               (List.iter check_bool_expr exprs;

@@ -33,8 +33,8 @@ type stmt =
   | Elif of expr list * stmt list
   | For of expr * expr * expr * stmt
   | While of expr * stmt
-  | Break
-  | Continue
+  | Break of stmt
+  | Continue of stmt
 
 type func_decl = {
     typ : typ;
@@ -103,8 +103,8 @@ let rec string_of_stmt = function
       "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
-  | Break -> "break"
-  | Continue -> "continue"
+  | Break(s) -> "break;\n" ^ string_of_stmt s
+  | Continue(s) -> "continue;\n" ^ string_of_stmt s
 
 let rec string_of_typ = function
     Int -> "int"
