@@ -1,0 +1,37 @@
+int main()
+{
+  string path;
+  string path2;
+  int i;
+  int j;
+  float sum;
+  float temp;
+  float w1;
+  float w2;
+  float w3;
+  byte[3][600][400] a;
+  w1 = 0.2126;
+  w2 = 0.7152;
+  w3 = 0.0722;
+  path = "./cat-stripped.ppm";
+  path2 = "./cat-check-blur.ppm";
+  read(path, a);
+  for (i = 0 ; i < 400 ; i = i + 1) {
+    for (j = 0; j < 600 ; j = j + 1 ) {
+      sum = 0;
+      temp = 0;
+      temp = w1 * a[0][j][i];
+      sum = sum + temp;
+      temp = w2 * a[1][j][i];
+      sum = sum + temp;
+      sum = w3 * a[2][j][i];
+      sum = sum + temp;
+      sum = sum/3;
+      a[0][j][i] = sum;
+      a[1][j][i] = sum;
+      a[2][j][i] = sum;
+    }
+  }
+  write(path2, a);
+  return 0;
+}

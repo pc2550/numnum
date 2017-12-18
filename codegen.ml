@@ -115,39 +115,39 @@ let translate (globals, functions) =
       try match (StringMap.find n local_vars) with (_,typ) -> get_type typ
       with | Not_found ->  match (StringMap.find n global_vars) with (_,typ) -> get_type typ in
     let integer_conv_op lh rh builder =
-        let rhw =  (L.integer_bitwidth (L.type_of rh)) in
-        let lhw =  (L.integer_bitwidth (L.type_of lh)) in
-        ( match lhw with
-            | 8 ->  (
-              match  rhw with
-                | 32 -> (L.build_intcast rh i8_t "conv" builder)
-                | 64 ->  (L.build_uitofp rh i8_t "conv" builder)
+        let rht =  (L.type_of rh) in
+        let lht=  (L.type_of lh) in
+        ( match lht with
+            | _ when lht == i8_t ->  (
+              match  rht with
+                | _ when rht == i32_t -> (L.build_intcast rh i8_t "conv" builder)
+                | _ when rht == float_t ->  (L.build_uitofp rh i8_t "conv" builder)
                 | _ -> rh )
-            | 32 -> (
-              match  rhw with
-                | 8 -> (L.build_intcast rh i32_t "conv" builder)
-                | 64 ->  (L.build_fptosi rh i32_t "conv" builder)
+            | _ when lht == i32_t -> (
+              match  rht with
+                | _ when rht == i8_t -> (L.build_intcast rh i32_t "conv" builder)
+                | _ when rht == float_t ->  (L.build_fptosi rh i32_t "conv" builder)
                 | _ -> rh )
-            | 64 ->  (
-              match  rhw with
-                | 64 -> rh
+            | _ when lht == float_t ->  (
+              match  rht with
+                | _ when rht == float_t -> rh
                 | _ ->  ( L.build_sitofp rh float_t "conv" builder) )
             | _ -> rh  ) in 
     let integer_conversion lh rh builder = 
         let rht = (L.type_of rh) in
         let rhw =  (L.integer_bitwidth rht) in
           (match lh with
-            | A.Byte -> (match rhw with
-                | _ when rhw == 8 -> rh
-                | _ when rhw == 64 -> (L.build_fptosi rh i8_t "conv" builder)
+            | A.Byte -> (match rht with
+                | _ when rht == i8_t -> rh
+                | _ when rht == float_t  -> (L.build_fptosi rh i8_t "conv" builder)
                 | _ -> ( L.build_intcast rh i8_t "conv" builder) ) 
-            | A.Int -> (match rhw with
-                | _ when rhw == 32 -> rh
-                | _ when rhw == 64 -> (L.build_fptosi rh i32_t "conv" builder)
+            | A.Int -> (match rht with
+                | _ when rht == i32_t -> rh
+                | _ when rht == float_t -> (L.build_fptosi rh i32_t "conv" builder)
                 | _  -> ( L.build_intcast rh i32_t "conv" builder) )
-            | A.Float -> (match rhw with
-                | _ when rhw == 64 -> rh
-                | _ when rhw == 8 -> ( L.build_uitofp rh float_t "conv" builder)
+            | A.Float -> (match rht with
+                | _ when rht == float_t -> rh
+                | _ when rht == i8_t -> ( L.build_uitofp rh float_t "conv" builder)
                 | _ -> ( L.build_sitofp rh float_t "conv" builder) )
             | _ -> rh) in
     (* Construct code for an expression; return its value *)
@@ -221,14 +221,7 @@ let translate (globals, functions) =
       | A.MatrixAssign (s,dims_assign,e) -> 
           let e' = expr builder e in 
           let s' = (lookup s) in 
-          let ef = (match (lookup_type s) with
-            | A.Byte -> (match (L.integer_bitwidth (L.type_of e')) with
-                | 8 -> e'
-                | _ -> ( L.const_trunc e' i8_t ) )
-            | A.Int -> (match (L.integer_bitwidth (L.type_of e')) with
-                | 32 -> e'
-                | _ -> ( L.const_zext_or_bitcast e' i32_t ) )
-            | _ ->  e') in
+          let ef = (integer_conversion (lookup_type s) e' builder) in
           let dims = lookup_dims s in
           let acc_params = List.map (fun el -> (expr builder el)) dims_assign in
           let get_pos = List.fold_right2 
