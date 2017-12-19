@@ -273,13 +273,37 @@ let translate (globals, functions) =
                             | L.TypeKind.Double ->
                                 (match el_op with
                                     | "el_add" -> L.build_fadd
+                                    | "el_sub" -> L.build_fsub
                                     | "el_mul" -> L.build_fmul
+                                    | "el_div" -> L.build_fdiv
+                                    (*
+                                    | "el_and" -> L.build_and
+                                    | "el_or" -> L.build_or
+                                    | "el_eq" -> L.build_fcmp L.Fcmp.Oeq
+                                    | "el_neq" -> L.build_fcmp L.Fcmp.One
+                                    | "el_less" -> L.build_fcmp L.Fcmp.Olt
+                                    | "el_leq" -> L.build_fcmp L.Fcmp.Ole
+                                    | "el_greater" -> L.build_fcmp L.Fcmp.Ogt
+                                    | "el_geq" -> L.build_fcmp L.Fcmp.Oge
+                                    *)
                                     | _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices"))
                                 )
                             | _ ->
                                 (match el_op with
                                     | "el_add" -> L.build_add
+                                    | "el_sub" -> L.build_sub
                                     | "el_mul" -> L.build_mul
+                                    | "el_div" -> L.build_sdiv
+                                    (*
+                                    | "el_and" -> L.build_and
+                                    | "el_or" -> L.build_or
+                                    | "el_eq" -> L.build_icmp L.Icmp.Eq
+                                    | "el_neq" -> L.build_icmp L.Icmp.Ne
+                                    | "el_less" -> L.build_icmp L.Icmp.Slt
+                                    | "el_leq" -> L.build_icmp L.Icmp.Sle
+                                    | "el_greater" -> L.build_icmp L.Icmp.Sgt
+                                    | "el_geq" -> L.build_icmp L.Icmp.Sge
+                                    *)
                                     | _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices"))
                                 )
                             ) e1' e2' "tmp" builder

@@ -47,31 +47,7 @@ let check (globals, functions) =
        (List.map (fun fd -> fd.fname) functions);
      (* Function declaration for a named function *)
      let built_in_decls =
-       StringMap.add "el_add"
-         {
-           typ = Void;
-           fname = "el_add";
-           (* The arguments to Matrix
-           don't matter, they are overridden in the checker below, but we need
-           them here for this to compile *)
-           formals = [(Matrix(Int, [1]), "x"); (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
-           locals = [];
-           body = [];
-         }
-
-        (StringMap.add "el_mul"
-         {
-           typ = Void;
-           fname = "el_mul";
-           (* The arguments to Matrix
-           don't matter, they are overridden in the checker below, but we need
-           them here for this to compile *)
-           formals = [(Matrix(Int, [1]), "x"); (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
-           locals = [];
-           body = [];
-         }
- 
-        (StringMap.add "dim"
+        StringMap.add "dim"
          {
            typ = Int;
            fname = "dim";
@@ -132,7 +108,8 @@ let check (globals, functions) =
               body = [];
             }
             (StringMap.add "printfl"
-               {                 typ = Void;
+               {                 
+                 typ = Void;
                  fname = "printfl";
                  formals = [ (Float, "x") ];
                  locals = [];
@@ -145,7 +122,37 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  })))))))))) in
+                  }
+        ))))))))
+     in
+     let built_in_decls =
+        List.fold_left (fun m f ->
+            StringMap.add f 
+            {
+                typ = Void;
+                fname = f;
+                formals = [(Matrix(Int, [1]), "x"); (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
+                locals = [];
+                body = [];
+            }
+            m
+        ) built_in_decls ["el_add"; "el_sub"; "el_mul"; "el_div"]
+    in
+    (*
+     let built_in_decls =
+        List.fold_left (fun m f ->
+            StringMap.add f 
+            {
+                typ = Void;
+                fname = f;
+                formals = [(Matrix(Int, [1]), "x"); (Matrix(Int, [1]), "y"); (Matrix(Bool, [true]), "z") ]; 
+                locals = [];
+                body = [];
+            }
+            m
+        ) built_in_decls ["el_and"; "el_or"; "el_eq"; "el_neq"; "el_less"; "el_leq"; "el_greater"; "el_geq"]
+    in
+    *)
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -269,7 +276,7 @@ let check (globals, functions) =
                              | Matrix(_,_) -> ()
                              | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e))))
                          | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
-       	     else if (fname = "el_mul" || fname = "el_add") then
+       	     else if (fname = "el_add" || fname = "el_sub" || fname = "el_mul" || fname = "el_div") then
                 let e = List.hd actuals in
                 (match(e) with
                     | Id(m) -> (match (type_of_identifier m) with
