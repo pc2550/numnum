@@ -1,0 +1,8 @@
+
+int main(){
+	int [10][2] a;
+	int [10][2] b;
+	int c;
+    el_mul(a, b, c);
+	return 0;
+}

@@ -104,7 +104,7 @@ let translate (globals, functions) =
     let lookup n =
       try match (StringMap.find n local_vars) with (lt,_) -> lt
       with | Not_found ->  match (StringMap.find n global_vars) with (lt,_) -> lt in
-    (* Look up the dimmensions for a matrix *)
+    (* Look up the dimensions for a matrix *)
     let lookup_dims n =
       let get_dims t = match t with 
           A.Matrix (_,dims) -> dims
@@ -245,10 +245,83 @@ let translate (globals, functions) =
       | A.Call ("dim", ([ e ])) ->
               ( match e with 
                 | A.Id(t) -> 
-                  let d= L.build_alloca  i32_t "tmp" builder in
-                  (ignore(L.build_store (L.const_int i32_t (List.length
-                  (lookup_dims t))) d  builder); L.build_load d "tmp" builder)
-               | _ -> expr builder e)
+                  let d = L.build_alloca  i32_t "tmp" builder in
+                  (ignore (L.build_store (L.const_int i32_t (List.length (lookup_dims t))) d  builder);
+                  L.build_load d "tmp" builder)
+                | _ -> expr builder e)
+      | A.Call (el_op, ([a; b; c])) ->
+            ( match a, b, c with
+                | A.Id(x), A.Id(y), A.Id(z) ->
+
+                    (* Get a list of params lists *)
+                    let dims = lookup_dims x in
+                    let rec range i j = if i >= j then [] else A.Literal(i) :: (range (i+1) j) in
+                    let dim2 = range 0 1 in
+                    let dim1 = range 0 1 in
+                    let tmp1 = List.concat (List.map (fun x -> List.map (fun y -> y::[x]) dim2) dim1) in
+                    let tmp2 = List.fold_left (fun tmp dim -> (List.concat (List.map (fun x -> List.map (fun y -> y::x) (range 0 dim)) tmp))) tmp1 dims in
+                    let all_pos = List.map List.rev (List.map List.rev (List.map List.tl (List.map List.tl (List.map List.rev tmp2)))) in
+
+                    (* Do multiplication at each of the positions *)
+                    let do_op = fun builder params ->
+                        let e1 = A.MatrixAccess(x, params) in
+                        let e2 = A.MatrixAccess(y, params) in
+                        let e1' = expr builder e1 in
+                        let e2' = expr builder e2 in
+                        let etype = L.classify_type (L.type_of e1') in
+                        let r = (match etype with
+                            | L.TypeKind.Double ->
+                                (match el_op with
+                                    | "el_add" -> L.build_fadd
+                                    | "el_sub" -> L.build_fsub
+                                    | "el_mul" -> L.build_fmul
+                                    | "el_div" -> L.build_fdiv
+                                    (*
+                                    | "el_and" -> L.build_and
+                                    | "el_or" -> L.build_or
+                                    | "el_eq" -> L.build_fcmp L.Fcmp.Oeq
+                                    | "el_neq" -> L.build_fcmp L.Fcmp.One
+                                    | "el_less" -> L.build_fcmp L.Fcmp.Olt
+                                    | "el_leq" -> L.build_fcmp L.Fcmp.Ole
+                                    | "el_greater" -> L.build_fcmp L.Fcmp.Ogt
+                                    | "el_geq" -> L.build_fcmp L.Fcmp.Oge
+                                    *)
+                                    | _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices"))
+                                )
+                            | _ ->
+                                (match el_op with
+                                    | "el_add" -> L.build_add
+                                    | "el_sub" -> L.build_sub
+                                    | "el_mul" -> L.build_mul
+                                    | "el_div" -> L.build_sdiv
+                                    (*
+                                    | "el_and" -> L.build_and
+                                    | "el_or" -> L.build_or
+                                    | "el_eq" -> L.build_icmp L.Icmp.Eq
+                                    | "el_neq" -> L.build_icmp L.Icmp.Ne
+                                    | "el_less" -> L.build_icmp L.Icmp.Slt
+                                    | "el_leq" -> L.build_icmp L.Icmp.Sle
+                                    | "el_greater" -> L.build_icmp L.Icmp.Sgt
+                                    | "el_geq" -> L.build_icmp L.Icmp.Sge
+                                    *)
+                                    | _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices"))
+                                )
+                            ) e1' e2' "tmp" builder
+                        in
+                        let z' = (lookup z) in 
+                        let ef = (integer_conversion (lookup_type z) r builder) in
+                        let dims = lookup_dims z in
+                        let acc_params = List.map (fun el -> (expr builder el)) params in
+                        let get_pos = List.fold_right2 
+                                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
+                                          acc_params 
+                                          dims 
+                                          (L.const_int i32_t 0) in
+                        ignore(L.build_store ef (L.build_gep z' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder); builder
+                    in
+                    ignore(List.fold_left do_op builder all_pos); L.const_int i32_t 0
+                           
+                | _, _, _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices")))
       | A.Call ("open", ([ e ; e2 ])) ->
               (L.build_call open_func [| expr builder e;expr builder e2|] "open" builder)
       | A.Call ("read", ([ e ; e2 ])) ->
@@ -325,30 +398,28 @@ let translate (globals, functions) =
                 ignore (L.build_cond_br bool_val then_bb else_bb builder);
                 L.builder_at_end context merge_bb))
       | A.Elif (exprs, stmts) ->
-          (match exprs with 
-            [] -> 
-	      (match stmts with
-	        [] -> builder
-               | h::t ->     
-		  stmt builder
-		    (A.Block
-		       [ A.Block [(h)]])
-		)
-          | _ ->
-	      let bool_val = expr builder (List.hd exprs) in
-	      let merge_bb = L.append_block context "merge" the_function in
-	      let then_bb = L.append_block context "then" the_function
-	      in
-		(add_terminal (stmt (L.builder_at_end context then_bb) (List.hd stmts))
-		   (L.build_br merge_bb);
-		 let else_bb = L.append_block context "else" the_function
-		 in
-		   (add_terminal
-		      (stmt (L.builder_at_end context else_bb) (A.Elif (List.tl exprs, List.tl stmts)))
-		      (L.build_br merge_bb);
-		    ignore (L.build_cond_br bool_val then_bb else_bb builder);
-		    L.builder_at_end context merge_bb))
-        )
+            (match exprs with 
+                [] -> 
+                    (match stmts with
+                        [] -> builder
+                        | h::t ->     
+                            stmt builder (A.Block [ A.Block [(h)]])
+                    )
+                | _ ->
+                    let bool_val = expr builder (List.hd exprs) in
+                    let merge_bb = L.append_block context "merge" the_function in
+                    let then_bb = L.append_block context "then" the_function
+                    in
+                    (add_terminal (stmt (L.builder_at_end context then_bb) (List.hd stmts))
+                        (L.build_br merge_bb);
+                        let else_bb = L.append_block context "else" the_function
+                        in
+                        (add_terminal
+                            (stmt (L.builder_at_end context else_bb) (A.Elif (List.tl exprs, List.tl stmts)))
+                            (L.build_br merge_bb);
+                        ignore (L.build_cond_br bool_val then_bb else_bb builder);
+                        L.builder_at_end context merge_bb))
+            )
       | A.While (predicate, body) ->
           let pred_bb = L.append_block context "while" the_function
           in
