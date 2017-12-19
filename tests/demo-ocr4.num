@@ -11,7 +11,7 @@ int main()
   float[10] out;
   byte[784] b;
   path = "./weights.bin";
-  path2 = "./7.bin";
+  path2 = "./4.bin";
   read(path, a);
   read(path2, b);
   for (j = 0; j < 28 ; j = j + 1){

@@ -202,6 +202,7 @@ let check (globals, functions) =
                  | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Int) -> Bool
                  | Less | Leq | Greater | Geq when (t1 = Int) && (t2 = Byte) -> Bool
                  | Less | Leq | Greater | Geq when (t1 = Byte) && (t2 = Int) -> Bool
+                 | Less | Leq | Greater | Geq when (t1 = Float) && (t2 = Float) -> Bool
                  | And | Or when (t1 = Bool) && (t2 = Bool) -> Bool
                  | _ ->
                      raise
