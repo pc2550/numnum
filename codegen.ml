@@ -266,7 +266,11 @@ let translate (globals, functions) =
                         let e2 = A.MatrixAccess(y, params) in
                         let e1' = expr builder e1 in
                         let e2' = expr builder e2 in
-                        let r = L.build_mul e1' e2' "tmp" builder in
+                        let etype = L.classify_type (L.type_of e1') in
+                        let r = (match etype with
+                            | L.TypeKind.Double -> L.build_fmul
+                            | _ -> L.build_mul ) e1' e2' "tmp" builder
+                        in
                         let z' = (lookup z) in 
                         let ef = (integer_conversion (lookup_type z) r builder) in
                         let dims = lookup_dims z in
