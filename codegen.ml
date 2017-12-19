@@ -260,6 +260,30 @@ let translate (globals, functions) =
                     let tmp1 = List.concat (List.map (fun x -> List.map (fun y -> y::[x]) dim2) dim1) in
                     let tmp2 = List.fold_left (fun tmp dim -> (List.concat (List.map (fun x -> List.map (fun y -> y::x) (range 0 dim)) tmp))) tmp1 dims in
                     let all_pos = List.map List.rev (List.map List.rev (List.map List.tl (List.map List.tl (List.map List.rev tmp2)))) in
+
+                    let do_mul = fun builder params ->
+                        let e1 = A.MatrixAccess(x, params) in
+                        let e2 = A.MatrixAccess(y, params) in
+                        let e1' = expr builder e1 in
+                        let e2' = expr builder e2 in
+                        let r = L.build_mul e1' e2' "tmp" builder in
+                        let z' = (lookup z) in 
+                        let ef = (integer_conversion (lookup_type z) r builder) in
+                        let dims = lookup_dims z in
+                        let acc_params = List.map (fun el -> (expr builder el)) params in
+                        let get_pos = List.fold_right2 
+                                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
+                                          acc_params 
+                                          dims 
+                                          (L.const_int i32_t 0) in
+                        ignore(L.build_store  ef (L.build_gep z' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder); builder
+                    in
+                    ignore(List.fold_left do_mul  builder all_pos); L.const_int i32_t 0
+                           
+                | _, _, _ -> raise (Failure ("Unable to multiply matrices")))
+
+
+                    (*
                     (* Use the params lists *)
                     (*let acc_params params = List.map (fun el -> (expr builder el)) params in*)
                     List.iter (fun params ->
@@ -314,7 +338,7 @@ let translate (globals, functions) =
                                       (L.const_int i32_t 0) in
                       L.build_store  ef (L.build_gep s' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder
                     *) 
-                | _, _, _ -> raise (Failure ("Unable to multiply matrices")))
+            *)
       | A.Call ("open", ([ e ; e2 ])) ->
               (L.build_call open_func [| expr builder e;expr builder e2|] "open" builder)
       | A.Call ("read", ([ e ; e2 ])) ->
