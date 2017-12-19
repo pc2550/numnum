@@ -47,7 +47,7 @@ let translate (globals, functions) =
       in StringMap.add n ((L.define_global n init the_module),t) m
     in List.fold_left global_var (StringMap.singleton "errno" errno) globals in
 
-  (* Declare printf(), which the print built-in function will call *)
+  (* Declare linux functions numnum will call *)
   let printf_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
   let printf_func = L.declare_function "printf" printf_t the_module in
   let open_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t;i32_t |] in
@@ -56,6 +56,8 @@ let translate (globals, functions) =
   let read_func = L.declare_function "read" read_t the_module in
   let readbyte_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type i8_t; i32_t |] in
   let readbyte_func = L.declare_function "read" readbyte_t the_module in
+  let readfl_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type float_t; i32_t |] in
+  let readfl_func = L.declare_function "read" readfl_t the_module in
   let creat_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t;i32_t |] in
   let creat_func = L.declare_function "creat" creat_t the_module in
   let write_t = L.var_arg_function_type i32_t [| i32_t; L.pointer_type i8_t; i32_t |] in
@@ -82,6 +84,7 @@ let translate (globals, functions) =
     let byte_format_str = L.build_global_stringptr "%x\n" "fmt" builder in
     let float_format_str = L.build_global_stringptr "%f\n" "fmt" builder in
     let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
+    let stringn_format_str = L.build_global_stringptr "%s" "fmt" builder in
     (* Construct the function's "locals": formal arguments and locally
        declared variables.  Allocate each on the stack, initialize their
        value, if appropriate, and remember their values in the "locals" map *)
@@ -135,7 +138,6 @@ let translate (globals, functions) =
             | _ -> rh  ) in 
     let integer_conversion lh rh builder = 
         let rht = (L.type_of rh) in
-        let rhw =  (L.integer_bitwidth rht) in
           (match lh with
             | A.Byte -> (match rht with
                 | _ when rht == i8_t -> rh
@@ -171,12 +173,7 @@ let translate (globals, functions) =
       | A.Binop (e1, op, e2) ->
           let e1' = expr builder e1 in
           let e2' = expr builder e2 in (*(print_int (L.integer_bitwidth (L.type_of e1')));*)
-          let e2f = (integer_conv_op e1' e2' builder) (*match  L.integer_bitwidth (L.type_of e1') with 
-            | 32 -> (
-              match  L.integer_bitwidth (L.type_of e2') with
-                | 8 -> L.const_trunc e1' i8_t
-                | _ -> e1') 
-            | _ -> e1' *)in
+          let e2f = (integer_conv_op e1' e2' builder) in
           let etype = L.classify_type (L.type_of (expr builder e1))
           in
             (match etype with
@@ -241,6 +238,9 @@ let translate (globals, functions) =
             "printf" builder
       | A.Call ("printbyte", ([ e ])) ->
           L.build_call printf_func [| byte_format_str; expr builder e |]
+            "printf" builder
+      | A.Call ("printstrn", ([ e ])) ->
+          L.build_call printf_func [| stringn_format_str; expr builder e |]
             "printf" builder
       | A.Call ("dim", ([ e ])) ->
               ( match e with 
@@ -340,6 +340,10 @@ let translate (globals, functions) =
                                               [| fd ;
                                                 (L.build_gep arrptr [|L.const_int i32_t 0;L.const_int i32_t 0|] "tmp" builder);
                                                  L.const_int i32_t (arrsize*4)|] "read" builder) 
+                          | A.Float -> (L.build_call readfl_func 
+                                              [| fd ;
+                                                (L.build_gep arrptr [|L.const_int i32_t 0;L.const_int i32_t 0|] "tmp" builder);
+                                                 L.const_int i32_t (arrsize*8)|] "read" builder) 
                           | _ -> raise (Failure ("Unable to read into matrix type " ^ (A.string_of_typ arrtype)))                       
                 ) in
                 (ignore (L.build_call close_func [| fd |] "close" builder));ret
