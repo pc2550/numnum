@@ -135,6 +135,7 @@ expr:
   | ID ASSIGN expr   { Assign($1, $3) }
   | ID matrix_accs ASSIGN expr { MatrixAssign($1, List.rev $2, $4) }
   | ID LPAREN actuals_opt RPAREN { Call($1, $3) }
+  | ID LPAREN expr COMMA actuals_opt RPAREN { BcMatrixCall($1, $3, $5) }
   | LPAREN expr RPAREN { $2 }
 
 matrix_accs:

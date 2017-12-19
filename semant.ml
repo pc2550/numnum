@@ -153,19 +153,21 @@ let check (globals, functions) =
         ) built_in_decls ["el_and"; "el_or"; "el_eq"; "el_neq"; "el_less"; "el_leq"; "el_greater"; "el_geq"]
     in
     *)
+    (*
      let built_in_decls =
         List.fold_left (fun m f ->
             StringMap.add f 
             {
                 typ = Void;
                 fname = f;
-                formals = [(Int), "x"; (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
+                formals = [(Int, "x"); (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
                 locals = [];
                 body = [];
             }
             m
         ) built_in_decls ["bc_add"; "bc_sub"; "bc_mul"; "bc_div"]
     in
+    *)
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -221,6 +223,8 @@ let check (globals, functions) =
                            (" = " ^
                               ((string_of_typ rt) ^
                                  (" in " ^ (string_of_expr ex)))))))
+          | BcMatrixCall (op, e1, e2) ->
+                  Int
           | (Binop (e1, op, e2) as e) ->
               let t1 = expr e1
               and t2 = expr e2

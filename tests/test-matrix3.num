@@ -15,8 +15,6 @@ int main(){
 
 
     print(c[0][0]);
-    el_mul(a, b, c);
-    print(c[0][0]);
     print(c[1][0]);
 
     bc_mul(x, b, c);
