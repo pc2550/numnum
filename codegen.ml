@@ -252,6 +252,7 @@ let translate (globals, functions) =
       | A.Call ("el_mul", ([a; b; c])) ->
             ( match a, b, c with
                 | A.Id(x), A.Id(y), A.Id(z) ->
+
                     (* Get a list of params lists *)
                     let dims = lookup_dims x in
                     let rec range i j = if i >= j then [] else A.Literal(i) :: (range (i+1) j) in
@@ -261,6 +262,7 @@ let translate (globals, functions) =
                     let tmp2 = List.fold_left (fun tmp dim -> (List.concat (List.map (fun x -> List.map (fun y -> y::x) (range 0 dim)) tmp))) tmp1 dims in
                     let all_pos = List.map List.rev (List.map List.rev (List.map List.tl (List.map List.tl (List.map List.rev tmp2)))) in
 
+                    (* Do multiplication at each of the positions *)
                     let do_mul = fun builder params ->
                         let e1 = A.MatrixAccess(x, params) in
                         let e2 = A.MatrixAccess(y, params) in
@@ -280,69 +282,11 @@ let translate (globals, functions) =
                                           acc_params 
                                           dims 
                                           (L.const_int i32_t 0) in
-                        ignore(L.build_store  ef (L.build_gep z' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder); builder
+                        ignore(L.build_store ef (L.build_gep z' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder); builder
                     in
-                    ignore(List.fold_left do_mul  builder all_pos); L.const_int i32_t 0
+                    ignore(List.fold_left do_mul builder all_pos); L.const_int i32_t 0
                            
                 | _, _, _ -> raise (Failure ("Unable to multiply matrices")))
-
-
-                    (*
-                    (* Use the params lists *)
-                    (*let acc_params params = List.map (fun el -> (expr builder el)) params in*)
-                    List.iter (fun params ->
-                        let acc_params = List.map (fun el -> (expr builder el)) params in
-                        let get_pos = List.fold_right2
-                            (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder))
-                                acc_params dims (L.const_int i32_t 0) in
-                            let e1 = L.build_load (L.build_gep (lookup x) [|L.const_int i32_t 0;get_pos|] "tmp" builder) "tmp" builder in
-                            let e1b = L.build_alloca i32_t "tmp" builder in
-                            (ignore ((L.build_store e1) e1b builder)); 
-                            let e2 = L.build_load (L.build_gep (lookup y) [|L.const_int i32_t 0;get_pos|] "tmp" builder) "tmp" builder in
-                            let e2b = L.build_alloca i32_t "tmp" builder in
-                            (ignore ((L.build_store e2) e2b builder));
-                            (*
-                            let etype = L.classify_type (L.type_of (expr builder e1)) in
-                            (match etype with
-                                | L.TypeKind.Double -> L.build_fmul
-                                | _ -> L.build_mul ) e1' e2' "tmp" builder
-                                *)
-                            let z' = (lookup z) in
-                            let e1f = (integer_conversion (lookup_type x) e1b builder) in
-                            let e2f = (integer_conversion (lookup_type x) e2b builder) in
-                            (ignore (L.build_store e1f (L.build_gep z' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder))
-                        (*
-                          let dims = lookup_dims s in
-                          let acc_params = List.map (fun el -> (expr builder el)) params in
-                          let get_pos = List.fold_right2 
-                        (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
-                                          acc_params 
-                                          dims 
-                                          (L.const_int i32_t 0) in
-                          L.build_load (L.build_gep (lookup s) [|L.const_int i32_t 0;get_pos|] "tmp" builder) "tmp" builder
-                        *)
-                        (*
-                          let e1 = A.MatrixAccess(x, params) in
-                          let e2 = A.MatrixAccess(y, params) in
-                          let e' = (L.const_int i32_t e1) * (L.const_int i32_t e2) in
-                          A.MatrixAssign(z, params, (L.const_int i32_t e'))
-                        *)
-                    ) all_pos
-                    
-                    (*
-                      let e' = expr builder e in 
-                      let s' = (lookup s) in 
-                      let ef = (integer_conversion (lookup_type s) e' builder) in
-                      let dims = lookup_dims s in
-                      let acc_params = List.map (fun el -> (expr builder el)) dims_assign in
-                      let get_pos = List.fold_right2 
-                                      (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
-                                      acc_params 
-                                      dims 
-                                      (L.const_int i32_t 0) in
-                      L.build_store  ef (L.build_gep s' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder
-                    *) 
-            *)
       | A.Call ("open", ([ e ; e2 ])) ->
               (L.build_call open_func [| expr builder e;expr builder e2|] "open" builder)
       | A.Call ("read", ([ e ; e2 ])) ->
