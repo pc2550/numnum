@@ -1,5 +1,7 @@
 
 int main(){
+    int x;
+    x = 1;
 	int [2][1] a;
 	int [2][1] b;
 	int [2][1] c;
@@ -17,12 +19,7 @@ int main(){
     print(c[0][0]);
     print(c[1][0]);
 
-    el_eq(a, b, c);
-
-    print(c[0][0]);
-    print(c[1][0]);
-
-    el_neq(a, b, c);
+    bc_mul(x, b, c);
 
     print(c[0][0]);
     print(c[1][0]);

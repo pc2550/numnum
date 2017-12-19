@@ -159,7 +159,7 @@ let check (globals, functions) =
             {
                 typ = Void;
                 fname = f;
-                formals = [Int, "x"; (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
+                formals = [(Int), "x"; (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
                 locals = [];
                 body = [];
             }
@@ -330,7 +330,6 @@ let check (globals, functions) =
                         | _ -> raise (Failure ("illegal argument to " ^ fname ^ " found  expected Matrix in " ^ (string_of_expr e))))
                     | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found expected Matrix in "^ (string_of_expr e))) 
                 )
-            (*
        	     else if (fname = "bc_add" || fname = "bc_sub" || fname = "bc_mul" || fname = "bc_div") then
                 let a = List.hd actuals in
                 (match(a) with
@@ -365,7 +364,6 @@ let check (globals, functions) =
                         )
                     | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found in "^ (string_of_expr a))) 
                 )
-            *)
             else
 
                   List.iter2
