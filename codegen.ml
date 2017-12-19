@@ -249,7 +249,7 @@ let translate (globals, functions) =
                   (ignore (L.build_store (L.const_int i32_t (List.length (lookup_dims t))) d  builder);
                   L.build_load d "tmp" builder)
                 | _ -> expr builder e)
-      | A.Call ("el_mul", ([a; b; c])) ->
+      | A.Call (el_op, ([a; b; c])) ->
             ( match a, b, c with
                 | A.Id(x), A.Id(y), A.Id(z) ->
 
@@ -263,15 +263,26 @@ let translate (globals, functions) =
                     let all_pos = List.map List.rev (List.map List.rev (List.map List.tl (List.map List.tl (List.map List.rev tmp2)))) in
 
                     (* Do multiplication at each of the positions *)
-                    let do_mul = fun builder params ->
+                    let do_op = fun builder params ->
                         let e1 = A.MatrixAccess(x, params) in
                         let e2 = A.MatrixAccess(y, params) in
                         let e1' = expr builder e1 in
                         let e2' = expr builder e2 in
                         let etype = L.classify_type (L.type_of e1') in
                         let r = (match etype with
-                            | L.TypeKind.Double -> L.build_fmul
-                            | _ -> L.build_mul ) e1' e2' "tmp" builder
+                            | L.TypeKind.Double ->
+                                (match el_op with
+                                    | "el_add" -> L.build_fadd
+                                    | "el_mul" -> L.build_fmul
+                                    | _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices"))
+                                )
+                            | _ ->
+                                (match el_op with
+                                    | "el_add" -> L.build_add
+                                    | "el_mul" -> L.build_mul
+                                    | _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices"))
+                                )
+                            ) e1' e2' "tmp" builder
                         in
                         let z' = (lookup z) in 
                         let ef = (integer_conversion (lookup_type z) r builder) in
@@ -284,9 +295,9 @@ let translate (globals, functions) =
                                           (L.const_int i32_t 0) in
                         ignore(L.build_store ef (L.build_gep z' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder); builder
                     in
-                    ignore(List.fold_left do_mul builder all_pos); L.const_int i32_t 0
+                    ignore(List.fold_left do_op builder all_pos); L.const_int i32_t 0
                            
-                | _, _, _ -> raise (Failure ("Unable to multiply matrices")))
+                | _, _, _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices")))
       | A.Call ("open", ([ e ; e2 ])) ->
               (L.build_call open_func [| expr builder e;expr builder e2|] "open" builder)
       | A.Call ("read", ([ e ; e2 ])) ->

@@ -47,7 +47,19 @@ let check (globals, functions) =
        (List.map (fun fd -> fd.fname) functions);
      (* Function declaration for a named function *)
      let built_in_decls =
-       StringMap.add "el_mul"
+       StringMap.add "el_add"
+         {
+           typ = Void;
+           fname = "el_add";
+           (* The arguments to Matrix
+           don't matter, they are overridden in the checker below, but we need
+           them here for this to compile *)
+           formals = [(Matrix(Int, [1]), "x"); (Matrix(Int, [1]), "y"); (Matrix(Int, [1]), "z") ]; 
+           locals = [];
+           body = [];
+         }
+
+        (StringMap.add "el_mul"
          {
            typ = Void;
            fname = "el_mul";
@@ -133,7 +145,7 @@ let check (globals, functions) =
                     formals = [ (String, "x") ];
                     locals = [];
                     body = [];
-                  }))))))))) in
+                  })))))))))) in
      let function_decls =
        List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
          built_in_decls functions in
@@ -257,7 +269,7 @@ let check (globals, functions) =
                              | Matrix(_,_) -> ()
                              | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e))))
                          | _ -> raise (Failure ("illegal argument to dim() found  expected Matrix in " ^ (string_of_expr e)))
-       	     else if (fname = "el_mul") then
+       	     else if (fname = "el_mul" || fname = "el_add") then
                 let e = List.hd actuals in
                 (match(e) with
                     | Id(m) -> (match (type_of_identifier m) with
@@ -273,18 +285,18 @@ let check (globals, functions) =
                                             | x::xs, y::ys -> x=y && compareVs xs ys
                                         in
                                         if (t1 != t2) then
-                                            raise(Failure ("incompatibles types of matrices to el_mul()"))
+                                            raise(Failure ("incompatibles types of matrices to " ^ fname))
                                         else if not (compareVs l1 l2) then
-                                            raise(Failure ("incompatibles dimensions of matrices to el_mul()"))
+                                            raise(Failure ("incompatibles dimensions of matrices to " ^ fname))
                                         else
                                             e2
-                                    | _, _ -> raise (Failure ("illegal argument to el_mul() found expected Matrix in " ^ (string_of_expr e))))
-                                | _, _ -> raise (Failure ("illegal argument to el_mul() found  expected Matrix in " ^ (string_of_expr e))))
+                                    | _, _ -> raise (Failure ("illegal argument to " ^ fname ^ " found expected Matrix in " ^ (string_of_expr e))))
+                                | _, _ -> raise (Failure ("illegal argument to " ^ fname ^ " found  expected Matrix in " ^ (string_of_expr e))))
                                  (* checking to see if two matrices have same type and shape *)
                             in
                             ignore(List.fold_left comp_matrix e (List.tl actuals)); ()
-                        | _ -> raise (Failure ("illegal argument to el_mul() found  expected Matrix in " ^ (string_of_expr e))))
-                    | _ -> raise(Failure ("illegal argument to el_mul() found expected Matrix in "^ (string_of_expr e))) 
+                        | _ -> raise (Failure ("illegal argument to " ^ fname ^ " found  expected Matrix in " ^ (string_of_expr e))))
+                    | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found expected Matrix in "^ (string_of_expr e))) 
                 )
 
             else
