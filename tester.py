@@ -3,83 +3,94 @@ import glob
 import sys
 import os, errno
 
+"""
+Sharon Chen
+December 20, 2017
+tester.py
+This program tests numnum features that have tests in the tests directory.
+"""
 
 
 feature = sys.argv[1]
-test_sources = glob.glob("tests/*" + feature + "*")
-try:
-    os.makedirs("tests/" + feature)
-except OSError as e:
-    if e.errno != errno.EEXIST:
-        raise
+show_code = sys.argv[2].lower() == "true"
 
-tests = [test.split(".")[0].split("/")[1] for test in test_sources]
-want_passes = []
-want_fails = []
-for test in tests:
-    if "test" in test:
-        want_passes.append("tests/" + test)
-    elif "fail":
-        want_fails.append("tests/" + test)
 
-print "=========================================="
-print "We are now testing this feature: " + feature
-print "------------------------------------------"
+def main():
 
-print "=========================================="
-print "Here are the tests that should be passing: "
-print "------------------------------------------"
-print want_passes
-
-for test in want_passes:
+    test_sources = glob.glob("tests/*" + feature + "*")
     try:
-        print "__________________________________________"
-        print test
-        print "``````````````````````````````````````````"
+        os.makedirs("tests/" + feature)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
+    tests = [test.split(".")[0].split("/")[1] for test in test_sources]
+    want_passes = []
+    want_fails = []
+    for test in tests:
+        if "test" in test:
+            want_passes.append("tests/" + test)
+        elif "fail":
+            want_fails.append("tests/" + test)
+
+    print "=========================================="
+    print "We are now testing this feature: " + feature
+    print "------------------------------------------"
+
+
+    print "=========================================="
+    print "Here are the tests that should be passing: "
+    print "------------------------------------------"
+    print want_passes
+
+    for test in want_passes:
+        try:
+            run_test(test, True)
+        except:
+            continue
+
+    print "=========================================="
+    print "Here are the tests that should be failing: "
+    print "------------------------------------------"
+    print want_fails
+
+    for test in want_fails:
+        try:
+            run_test(test, False)
+        except:
+            continue
+
+
+def run_test(test, want_pass):
+    """Run this one test, which either should pass or fail."""
+
+    print "__________________________________________"
+    print test
+    print "``````````````````````````````````````````"
+
+    if show_code:
         print "Here is the code: "
-        call(["cat", test])
-        in_f = open(test + ".num", "r")
-        out_f = open(test + ".ll", "w")
-        call(["./numnum"], stdin=in_f, stdout=out_f)
-        print ""
-        print "Running " + test
-        call(["lli", test + ".ll"])
-        print ""
-        print "Expected output: " + test + ".out"
-        call(["cat", test + ".out"])
-        print ""
-        print "End of test for " + test
-        in_f.close()
-        out_f.close()
-    except:
-        continue
+        call(["cat", test + ".num"])
 
-print "=========================================="
-print "Here are the tests that should be failing: "
-print "------------------------------------------"
-print want_fails
+    in_f = open(test + ".num", "r")
+    out_f = open(test + ".ll", "w")
+    call(["./numnum"], stdin=in_f, stdout=out_f)
+    print ""
+    print "Running " + test
+    call(["lli", test + ".ll"])
+    print ""
+    print "Expected output: " + test + ".out"
 
-for test in want_fails:
-    try:
-        print "__________________________________________"
-        print test
-        print "``````````````````````````````````````````"
+    if want_pass:
+        ext = ".out"
+    else:
+        ext = ".err"
 
-        print "Here is the code: "
-        call(["cat", test])
-        in_f = open(test + ".num", "r")
-        out_f = open(test + ".ll", "w")
-        call(["./numnum"], stdin=in_f, stdout=out_f)
-        print ""
-        print "Running " + test
-        call(["lli", test + ".ll"])
-        print ""
-        print "Expected output: " + test + ".err"
-        call(["cat", test + ".err"])
-        print ""
-        print "End of test for " + test
-        in_f.close()
-        out_f.close()
-    except:
-        continue
+    call(["cat", test + ext])
+    print ""
+    print "End of test for " + test
+    in_f.close()
+    out_f.close()
+
+
+main()
