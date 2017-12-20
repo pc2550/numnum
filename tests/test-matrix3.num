@@ -1,32 +1,22 @@
 
 int main(){
-	int [2][1] a;
-	int [2][1] b;
-	int [2][1] c;
+	float [2][1] a;
+	float [2][1] b;
+	float [2][1] c;
 
-    a[0][0] = 2;
-    a[1][0] = 4; 
-    b[0][0] = 3;
-    b[1][0] = 3;
-    c[0][0] = 1;
-    c[1][0] = 1;
-
-
-    print(c[0][0]);
-    el_mul(a, b, c);
-    print(c[0][0]);
-    print(c[1][0]);
-
-    el_eq(a, b, c);
-
-    print(c[0][0]);
-    print(c[1][0]);
-
-    el_neq(a, b, c);
-
-    print(c[0][0]);
-    print(c[1][0]);
+    a[0][0] = 2.0;
+    a[1][0] = 4.0; 
+    b[0][0] = 3.0;
+    b[1][0] = 3.0;
+    c[0][0] = 1.0;
+    c[1][0] = 1.0;
 
 
+    printfl(c[0][0]);
+
+    el_add(a, b, c);
+
+    printfl(c[0][0]);
+    printfl(c[1][0]);
 	return 0;
 }
