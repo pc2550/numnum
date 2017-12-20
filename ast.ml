@@ -20,7 +20,6 @@ type expr =
   | Binop of expr * op * expr
   | Unop of uop * expr
   | Assign of string * expr
-  | BcMatrixCall of string * expr * expr list
   | Call of string * expr list
   | MatrixAccess of string * expr list
   | MatrixAssign of string * expr list * expr
@@ -82,8 +81,6 @@ let rec string_of_expr = function
             (l ^ " " ^ string_of_op o ^ " " ^ r)
   | Unop(o, e) -> string_of_uop o ^ string_of_expr e
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
-  | BcMatrixCall(f, e1, e2) ->
-      f ^ "(" ^ string_of_expr e1 ^ ", " ^ String.concat ", " (List.map string_of_expr e2) ^ ")"
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Noexpr -> ""

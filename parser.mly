@@ -4,7 +4,7 @@
 open Ast
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA COLON
+%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA
 %token PLUS MINUS TIMES DIVIDE ASSIGN NOT
 %token EQ NEQ LT LEQ GT GEQ TRUE FALSE AND OR
 %token RETURN IF ELSE FOR WHILE INT BOOL VOID 
@@ -13,7 +13,6 @@ open Ast
 %token <int> LITERAL
 %token <float> FLITERAL
 %token <string> ID SLITERAL
-%token <string> BC_MAT_CALL
 %token EOF
 
 %nonassoc NOELSE
@@ -135,7 +134,6 @@ expr:
   | NOT expr         { Unop(Not, $2) }
   | ID ASSIGN expr   { Assign($1, $3) }
   | ID matrix_accs ASSIGN expr { MatrixAssign($1, List.rev $2, $4) }
-  | BC_MAT_CALL LPAREN expr COLON actuals_opt RPAREN { BcMatrixCall($1, $3, $5) }
   | ID LPAREN actuals_opt RPAREN { Call($1, $3) }
   | LPAREN expr RPAREN { $2 }
 
