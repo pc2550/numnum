@@ -1,26 +1,16 @@
 
-int main(){
+int main() {
     int x;
-    x = 1;
-	int [2][1] a;
 	int [2][1] b;
 	int [2][1] c;
 
-    a[0][0] = 2;
-    a[1][0] = 4; 
+    x = 1;
     b[0][0] = 3;
     b[1][0] = 3;
     c[0][0] = 1;
     c[1][0] = 1;
 
-
-    print(c[0][0]);
-    print(c[1][0]);
-
-    bc_mul(x, b, c);
-
-    print(c[0][0]);
-    print(c[1][0]);
+    bc_add(1 : b, c);
 
 
 	return 0;

@@ -230,6 +230,61 @@ let translate (globals, functions) =
                           dims 
                           (L.const_int i32_t 0) in
           L.build_store  ef (L.build_gep s' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder
+      | A.BcMatrixCall (bc_op, a, [b; c])->
+              (match (b, c) with
+                  A.Id(m1), A.Id(m2)->
+                    (* Get a list of params lists *)
+                    let dims = lookup_dims m2 in
+                    let rec range i j = if i >= j then [] else A.Literal(i) :: (range (i+1) j) in
+                    let dim2 = range 0 1 in
+                    let dim1 = range 0 1 in
+                    let tmp1 = List.concat (List.map (fun x -> List.map (fun y -> y::[x]) dim2) dim1) in
+                    let tmp2 = List.fold_left (fun tmp dim -> (List.concat (List.map (fun x -> List.map (fun y -> y::x) (range 0 dim)) tmp))) tmp1 dims in
+                    let all_pos = List.map List.rev (List.map List.rev (List.map List.tl (List.map List.tl (List.map List.rev tmp2)))) in
+
+                    (* Do multiplication at each of the positions *)
+                    let do_op = fun builder params ->
+                        let e1 = a in
+                        let e2 = A.MatrixAccess(m1, params) in
+                        let e1' = expr builder e1 in
+                        let e2' = expr builder e2 in
+                        let etype = L.classify_type (L.type_of e1') in
+                        let r = (match etype with
+                            | L.TypeKind.Double ->
+                                (match bc_op with
+                                    | "bc_add" -> L.build_fadd
+                                    | "bc_sub" -> L.build_fsub
+                                    | "bc_mul" -> L.build_fmul
+                                    | "bc_div" -> L.build_fdiv
+                                    | _ -> raise (Failure ("Unable to do broadcast operation " ^ bc_op ^ " on matrices"))
+                                )
+                            | _ ->
+                                (match bc_op with
+                                    | "bc_add" -> L.build_add
+                                    | "bc_sub" -> L.build_sub
+                                    | "bc_mul" -> L.build_mul
+                                    | "bc_div" -> L.build_sdiv
+                                    | _ -> raise (Failure ("Unable to do broadcast operation " ^ bc_op ^ " on matrices"))
+                                )
+                            ) e1' e2' "tmp" builder
+                        in
+                        let m2' = (lookup m2) in 
+                        let ef = (integer_conversion (lookup_type m2) r builder) in
+                        let dims = lookup_dims m2 in
+                        let acc_params = List.map (fun el -> (expr builder el)) params in
+                        let get_pos = List.fold_right2 
+                                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
+                                          acc_params 
+                                          dims 
+                                          (L.const_int i32_t 0) in
+                        ignore(L.build_store ef (L.build_gep m2' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder); builder
+                    in
+                    ignore(List.fold_left do_op builder all_pos); L.const_int i32_t 0
+                    
+                | _ -> raise (Failure ("Unable to do broadcast operation " ^ bc_op ^ " on matrices"))
+            )
+      | A.BcMatrixCall (bc_op, a, _) ->
+            raise (Failure ("Unable to do broadcast operation " ^ bc_op ^ " on matrices"))
       | A.Call ("print", ([ e ])) | A.Call ("printb", ([ e ])) ->
           L.build_call printf_func [| int_format_str; expr builder e |]
             "printf" builder
@@ -322,59 +377,6 @@ let translate (globals, functions) =
                     ignore(List.fold_left do_op builder all_pos); L.const_int i32_t 0
                            
                 | _, _, _ -> raise (Failure ("Unable to do element-wise operation " ^ el_op ^ " on matrices"))
-            )
-      | A.BcMatrixCall (bc_op, a,[b; c]) ->
-            ( match b, c with
-                | A.Id(m1), A.Id(m2) -> 
-
-                    (* Get a list of params lists *)
-                    let dims = lookup_dims m2 in
-                    let rec range i j = if i >= j then [] else A.Literal(i) :: (range (i+1) j) in
-                    let dim2 = range 0 1 in
-                    let dim1 = range 0 1 in
-                    let tmp1 = List.concat (List.map (fun x -> List.map (fun y -> y::[x]) dim2) dim1) in
-                    let tmp2 = List.fold_left (fun tmp dim -> (List.concat (List.map (fun x -> List.map (fun y -> y::x) (range 0 dim)) tmp))) tmp1 dims in
-                    let all_pos = List.map List.rev (List.map List.rev (List.map List.tl (List.map List.tl (List.map List.rev tmp2)))) in
-
-                    (* Do multiplication at each of the positions *)
-                    let do_op = fun builder params ->
-                        let e1 = a in
-                        let e2 = A.MatrixAccess(m1, params) in
-                        let e1' = expr builder e1 in
-                        let e2' = expr builder e2 in
-                        let etype = L.classify_type (L.type_of e1') in
-                        let r = (match etype with
-                            | L.TypeKind.Double ->
-                                (match bc_op with
-                                    | "bc_add" -> L.build_fadd
-                                    | "bc_sub" -> L.build_fsub
-                                    | "bc_mul" -> L.build_fmul
-                                    | "bc_div" -> L.build_fdiv
-                                    | _ -> raise (Failure ("Unable to do broadcast operation " ^ bc_op ^ " on matrices"))
-                                )
-                            | _ ->
-                                (match bc_op with
-                                    | "bc_add" -> L.build_add
-                                    | "bc_sub" -> L.build_sub
-                                    | "bc_mul" -> L.build_mul
-                                    | "bc_div" -> L.build_sdiv
-                                    | _ -> raise (Failure ("Unable to do broadcast operation " ^ bc_op ^ " on matrices"))
-                                )
-                            ) e1' e2' "tmp" builder
-                        in
-                        let m2' = (lookup m2) in 
-                        let ef = (integer_conversion (lookup_type m2) r builder) in
-                        let dims = lookup_dims m2 in
-                        let acc_params = List.map (fun el -> (expr builder el)) params in
-                        let get_pos = List.fold_right2 
-                                          (fun p d acc -> (L.build_add p (L.build_mul (L.const_int i32_t d) acc "tmp" builder) "tmp" builder)) 
-                                          acc_params 
-                                          dims 
-                                          (L.const_int i32_t 0) in
-                        ignore(L.build_store ef (L.build_gep m2' [|L.const_int i32_t 0;get_pos|] "tmp" builder) builder); builder
-                    in
-                    ignore(List.fold_left do_op builder all_pos); L.const_int i32_t 0
-                | _, _ -> raise (Failure ("Unable to do broadcast operation " ^ bc_op ^ " on matrices"))
             )
       | A.Call ("open", ([ e ; e2 ])) ->
               (L.build_call open_func [| expr builder e;expr builder e2|] "open" builder)

@@ -32,23 +32,28 @@ print "------------------------------------------"
 print want_passes
 
 for test in want_passes:
-    print "__________________________________________"
-    print test
-    print "``````````````````````````````````````````"
+    try:
+        print "__________________________________________"
+        print test
+        print "``````````````````````````````````````````"
 
-    print "Here is the code: "
-    call(["cat", test])
-    f = open(test + ".ll", "w")
-    call(["./numnum", "<", test + ".num"], stdout=f)
-    f.close()
-    print ""
-    print "Running " + test
-    call(["lli", test + ".ll"])
-    print ""
-    print "Expected output: " + test + ".out"
-    call(["cat", test + ".out"])
-    print ""
-    print "End of test for " + test
+        print "Here is the code: "
+        call(["cat", test])
+        in_f = open(test + ".num", "r")
+        out_f = open(test + ".ll", "w")
+        call(["./numnum"], stdin=in_f, stdout=out_f)
+        print ""
+        print "Running " + test
+        call(["lli", test + ".ll"])
+        print ""
+        print "Expected output: " + test + ".out"
+        call(["cat", test + ".out"])
+        print ""
+        print "End of test for " + test
+        in_f.close()
+        out_f.close()
+    except:
+        continue
 
 print "=========================================="
 print "Here are the tests that should be failing: "
@@ -56,20 +61,25 @@ print "------------------------------------------"
 print want_fails
 
 for test in want_fails:
-    print "__________________________________________"
-    print test
-    print "``````````````````````````````````````````"
+    try:
+        print "__________________________________________"
+        print test
+        print "``````````````````````````````````````````"
 
-    print "Here is the code: "
-    call(["cat", test])
-    f = open(test + ".ll", "w")
-    call(["./numnum", "<", test + ".num"], stdout=f)
-    f.close()
-    print ""
-    print "Running " + test
-    call(["lli", test + ".ll"])
-    print ""
-    print "Expected output: " + test + ".err"
-    call(["cat", test + ".err"])
-    print ""
-    print "End of test for " + test
+        print "Here is the code: "
+        call(["cat", test])
+        in_f = open(test + ".num", "r")
+        out_f = open(test + ".ll", "w")
+        call(["./numnum"], stdin=in_f, stdout=out_f)
+        print ""
+        print "Running " + test
+        call(["lli", test + ".ll"])
+        print ""
+        print "Expected output: " + test + ".err"
+        call(["cat", test + ".err"])
+        print ""
+        print "End of test for " + test
+        in_f.close()
+        out_f.close()
+    except:
+        continue

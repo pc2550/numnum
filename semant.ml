@@ -223,9 +223,40 @@ let check (globals, functions) =
                            (" = " ^
                               ((string_of_typ rt) ^
                                  (" in " ^ (string_of_expr ex)))))))
-          | BcMatrixCall (op, e1, e2) ->
-                  Int
-          | (Binop (e1, op, e2) as e) ->
+          | BcMatrixCall (fname, e1, actuals) ->
+                (match(e1) with
+                    | Id(x) -> 
+                        let e = List.hd actuals in
+                        (match(e) with
+                            | Id(m) -> (match (type_of_identifier m) with
+                                | Matrix(t, l) ->
+                                    let comp_matrix e1 e2 =
+                                    (match(e1, e2) with
+                                        | Id(m1), Id(m2) -> (match (type_of_identifier m1, type_of_identifier m2) with
+                                            | Matrix(t1, l1), Matrix(t2, l2) -> 
+                                                let rec compareVs v1 v2 = match v1, v2 with
+                                                    | [], [] -> true
+                                                    | [], _
+                                                    | _, [] -> false
+                                                    | x::xs, y::ys -> x=y && compareVs xs ys
+                                                in
+                                                if (t1 != t2) then
+                                                    raise(Failure ("incompatibles types of matrices to " ^ fname))
+                                                else if not (compareVs l1 l2) then
+                                                    raise(Failure ("incompatibles dimensions of matrices to " ^ fname))
+                                                else
+                                                    e2
+                                            | _, _ -> raise (Failure ("illegal argument to " ^ fname ^ " found expected Matrix in " ^ (string_of_expr e))))
+                                        | _, _ -> raise (Failure ("illegal argument to " ^ fname ^ " found expected Matrix in " ^ (string_of_expr e))))
+                                         (* checking to see if two matrices have same type and shape *)
+                                    in
+                                    ignore(List.fold_left comp_matrix e actuals); raise(Failure ("Come on!"))
+                                | _ -> raise (Failure ("illegal argument to " ^ fname ^ " found expected Matrix in " ^ (string_of_expr e))))
+                            | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found expected Matrix in "^ (string_of_expr e))) 
+                        )
+                    | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found in "^ (string_of_expr e1))) 
+                )
+         | (Binop (e1, op, e2) as e) ->
               let t1 = expr e1
               and t2 = expr e2
               in
@@ -308,18 +339,6 @@ let check (globals, functions) =
                                             | _, [] -> false
                                             | x::xs, y::ys -> x=y && compareVs xs ys
                                         in
-                                    (*
-                                        let lt = type_of_identifier m1
-                                        and rt = expr e
-                                        in
-                                          check_assign lt rt
-                                            (Failure
-                                               ("illegal assignment " ^
-                                                  ((string_of_typ lt) ^
-                                                     (" = " ^
-                                                        ((string_of_typ rt) ^
-                                                           (" in " ^ (string_of_expr ex)))))))
-                                    *)
                                         if (t1 != t2) then
                                             raise(Failure ("incompatibles types of matrices to " ^ fname))
                                         else if not (compareVs l1 l2) then
@@ -333,40 +352,6 @@ let check (globals, functions) =
                             ignore(List.fold_left comp_matrix e (List.tl actuals)); ()
                         | _ -> raise (Failure ("illegal argument to " ^ fname ^ " found  expected Matrix in " ^ (string_of_expr e))))
                     | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found expected Matrix in "^ (string_of_expr e))) 
-                )
-       	     else if (fname = "bc_add" || fname = "bc_sub" || fname = "bc_mul" || fname = "bc_div") then
-                let a = List.hd actuals in
-                (match(a) with
-                    | Id(x) -> 
-                        let e = List.hd (List.tl actuals) in
-                        (match(e) with
-                            | Id(m) -> (match (type_of_identifier m) with
-                                | Matrix(t, l) ->
-                                    let comp_matrix e1 e2 =
-                                    (match(e1, e2) with
-                                        | Id(m1), Id(m2) -> (match (type_of_identifier m1, type_of_identifier m2) with
-                                            | Matrix(t1, l1), Matrix(t2, l2) -> 
-                                                let rec compareVs v1 v2 = match v1, v2 with
-                                                    | [], [] -> true
-                                                    | [], _
-                                                    | _, [] -> false
-                                                    | x::xs, y::ys -> x=y && compareVs xs ys
-                                                in
-                                                if (t1 != t2) then
-                                                    raise(Failure ("incompatibles types of matrices to " ^ fname))
-                                                else if not (compareVs l1 l2) then
-                                                    raise(Failure ("incompatibles dimensions of matrices to " ^ fname))
-                                                else
-                                                    e2
-                                            | _, _ -> raise (Failure ("illegal argument to " ^ fname ^ " found expected Matrix in " ^ (string_of_expr e))))
-                                        | _, _ -> raise (Failure ("illegal argument to " ^ fname ^ " found expected Matrix in " ^ (string_of_expr e))))
-                                         (* checking to see if two matrices have same type and shape *)
-                                    in
-                                    ignore(List.fold_left comp_matrix e (List.tl actuals)); ()
-                                | _ -> raise (Failure ("illegal argument to " ^ fname ^ " found expected Matrix in " ^ (string_of_expr e))))
-                            | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found expected Matrix in "^ (string_of_expr e))) 
-                        )
-                    | _ -> raise(Failure ("illegal argument to " ^ fname ^ " found in "^ (string_of_expr a))) 
                 )
             else
 
