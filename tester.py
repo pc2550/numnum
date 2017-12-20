@@ -24,7 +24,7 @@ def main():
         if e.errno != errno.EEXIST:
             raise
 
-    tests = [test.split(".")[0].split("/")[1] for test in test_sources]
+    tests = [test.split(".")[0].split("/")[1] for test in test_sources if ".num" in test]
     want_passes = []
     want_fails = []
     for test in tests:
@@ -92,5 +92,6 @@ def run_test(test, want_pass):
     in_f.close()
     out_f.close()
 
+    os.remove(test + ".ll")
 
 main()
