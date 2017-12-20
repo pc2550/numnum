@@ -131,7 +131,7 @@ let check (globals, functions) =
                     locals = [];
                     body = [];
                   }
-        ))))))))
+        )))))))))
      in
      let built_in_decls =
         List.fold_left (fun m f ->
