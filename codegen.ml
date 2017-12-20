@@ -462,7 +462,7 @@ let translate (globals, functions) =
                 [] -> 
                     (match stmts with
                         [] -> builder
-                        | h::t ->     
+                        | h::_ ->     
                             stmt builder (A.Block [ A.Block [(h)]])
                     )
                 | _ ->

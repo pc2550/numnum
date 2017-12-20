@@ -307,7 +307,7 @@ let check (globals, functions) =
                 let e = List.hd actuals in
                 (match(e) with
                     | Id(m) -> (match (type_of_identifier m) with
-                        | Matrix(t, l) ->
+                        | Matrix(_, _) ->
                             let comp_matrix e1 e2 =
                             (match(e1, e2) with
                                 | Id(m1), Id(m2) -> (match (type_of_identifier m1, type_of_identifier m2) with
@@ -336,7 +336,7 @@ let check (globals, functions) =
                 let e = List.hd actuals in
                 (match(e) with
                     | Id(m) -> (match (type_of_identifier m) with
-                        | Matrix(t, [1]) ->
+                        | Matrix(_, [1]) ->
                             let comp_matrix e1 e2 =
                             (match(e1, e2) with
                                 | Id(m1), Id(m2) -> (match (type_of_identifier m1, type_of_identifier m2) with

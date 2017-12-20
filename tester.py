@@ -8,6 +8,8 @@ Sharon Chen
 December 20, 2017
 tester.py
 This program tests numnum features that have tests in the tests directory.
+
+usage: python tester.py <feature> <show_code>
 """
 
 
@@ -25,6 +27,7 @@ def main():
             raise
 
     tests = [test.split(".")[0].split("/")[1] for test in test_sources if ".num" in test]
+    tests.sort()
     want_passes = []
     want_fails = []
     for test in tests:
@@ -71,12 +74,12 @@ def run_test(test, want_pass):
     if show_code:
         print "Here is the code: "
         call(["cat", test + ".num"])
-
+    
     in_f = open(test + ".num", "r")
     out_f = open(test + ".ll", "w")
     call(["./numnum"], stdin=in_f, stdout=out_f)
     print ""
-    print "Running " + test
+    print "Running: " + test + ".num"
     call(["lli", test + ".ll"])
     print ""
     print "Expected output: " + test + ".out"
